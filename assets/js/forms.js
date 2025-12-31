@@ -654,7 +654,8 @@ class FormsManager {
         return {
             recomendaciones: document.getElementById('recomendaciones')?.value || '',
             conclusion: document.getElementById('conclusion')?.value || '',
-            accionesCorrectivas: window.app?.accionesCorrectivas || []
+            accionesCorrectivas: window.app?.accionesCorrectivas || [],
+            generalPhotos: window.app?.generalPhotos || {}
         };
     }
 
@@ -679,6 +680,20 @@ class FormsManager {
             window.app.accionesCorrectivas = [];
             data.accionesCorrectivas.forEach(accion => {
                 window.app.addAccionCorrectiva(accion);
+            });
+        }
+        
+        // Load general photos
+        if (data.generalPhotos && window.app) {
+            window.app.generalPhotos = data.generalPhotos;
+            // Update buttons
+            ['recomendaciones', 'conclusion'].forEach(campo => {
+                for (let i = 1; i <= 4; i++) {
+                    const key = `${campo}_${i}`;
+                    if (data.generalPhotos[key]) {
+                        window.app.updateGeneralPhotoButton(campo, i, data.generalPhotos[key]);
+                    }
+                }
             });
         }
     }

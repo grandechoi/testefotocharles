@@ -13,6 +13,7 @@ class App {
         this.currentTab = 'datos';
         this.signaturePads = {};
         this.accionesCorrectivas = [];
+        this.generalPhotos = {};
         this.init();
     }
 
@@ -650,36 +651,131 @@ class App {
         const index = this.accionesCorrectivas.findIndex(a => a.id === accion.id);
         
         const card = document.createElement('div');
-        card.className = 'accion-correctiva-card';
+        card.className = 'accion-correctiva-card collapsed-section';
         card.dataset.id = accion.id;
         card.innerHTML = `
-            <div class="accion-correctiva-header">
-                <span class="accion-correctiva-number">Acción Correctiva #${index + 1}</span>
-                <button type="button" class="btn-remove-accion" onclick="app.removeAccionCorrectiva(${accion.id})">✕</button>
+            <div class="accion-correctiva-header section-header-collapse" onclick="app.toggleCollapse(this)">
+                <span class="accion-correctiva-number">Acción Correctiva #${index + 1}: ${accion.titulo || 'Sin título'}</span>
+                <div class="header-actions">
+                    <span class="collapse-icon">▼</span>
+                    <button type="button" class="btn-remove-accion" onclick="event.stopPropagation(); app.removeAccionCorrectiva(${accion.id})">✕</button>
+                </div>
             </div>
-            <div class="form-field">
-                <label>Título</label>
-                <input type="text" class="accion-titulo" value="${accion.titulo || ''}" 
-                       onchange="app.updateAccionCorrectiva(${accion.id}, 'titulo', this.value)">
-            </div>
-            <div class="form-field">
-                <label>Descripción del Problema</label>
-                <textarea class="accion-descripcion" rows="3" 
-                          onchange="app.updateAccionCorrectiva(${accion.id}, 'descripcionProblema', this.value)">${accion.descripcionProblema || ''}</textarea>
-            </div>
-            <div class="form-field">
-                <label>Intervención</label>
-                <textarea class="accion-intervencion" rows="3" 
-                          onchange="app.updateAccionCorrectiva(${accion.id}, 'intervencion', this.value)">${accion.intervencion || ''}</textarea>
-            </div>
-            <div class="form-field">
-                <label>Resultado</label>
-                <textarea class="accion-resultado" rows="3" 
-                          onchange="app.updateAccionCorrectiva(${accion.id}, 'resultado', this.value)">${accion.resultado || ''}</textarea>
+            <div class="section-content" style="display: none;">
+                <div class="form-field">
+                    <label>Título</label>
+                    <input type="text" class="accion-titulo" value="${accion.titulo || ''}" 
+                           onchange="app.updateAccionCorrectiva(${accion.id}, 'titulo', this.value); app.updateAccionTitulo(${accion.id})">
+                </div>
+                <div class="form-field">
+                    <label>Descripción del Problema</label>
+                    <textarea class="accion-descripcion" rows="3" 
+                              onchange="app.updateAccionCorrectiva(${accion.id}, 'descripcionProblema', this.value)">${accion.descripcionProblema || ''}</textarea>
+                    <div class="item-photos">
+                        ${[1,2,3,4].map(n => `<button class="btn-item-photo" onclick="app.openAccionPhoto(${accion.id}, 'descripcion', ${n})">📷 ${n}</button>`).join('')}
+                    </div>
+                </div>
+                <div class="form-field">
+                    <label>Intervención</label>
+                    <textarea class="accion-intervencion" rows="3" 
+                              onchange="app.updateAccionCorrectiva(${accion.id}, 'intervencion', this.value)">${accion.intervencion || ''}</textarea>
+                    <div class="item-photos">
+                        ${[1,2,3,4].map(n => `<button class="btn-item-photo" onclick="app.openAccionPhoto(${accion.id}, 'intervencion', ${n})">📷 ${n}</button>`).join('')}
+                    </div>
+                </div>
+                <div class="form-field">
+                    <label>Resultado</label>
+                    <textarea class="accion-resultado" rows="3" 
+                              onchange="app.updateAccionCorrectiva(${accion.id}, 'resultado', this.value)">${accion.resultado || ''}</textarea>
+                    <div class="item-photos">
+                        ${[1,2,3,4].map(n => `<button class="btn-item-photo" onclick="app.openAccionPhoto(${accion.id}, 'resultado', ${n})">📷 ${n}</button>`).join('')}
+                    </div>
+                </div>
             </div>
         `;
         
         container.appendChild(card);
+        
+        // Update photo buttons if photos exist
+        if (accion.photos) {
+            ['descripcion', 'intervencion', 'resultado'].forEach(campo => {
+                [1,2,3,4].forEach(n => {
+                    const key = `${accion.id}_${campo}_${n}`;
+                    if (accion.photos[key]) {
+                        this.updateAccionPhotoButton(accion.id, campo, n, accion.photos[key]);
+                    }
+                });
+            });
+        }
+    }
+    
+    updateAccionTitulo(id) {
+        const accion = this.accionesCorrectivas.find(a => a.id === id);
+        if (!accion) return;
+        const card = document.querySelector(`[data-id="${id}"]`);
+        if (card) {
+            const numberSpan = card.querySelector('.accion-correctiva-number');
+            const index = this.accionesCorrectivas.findIndex(a => a.id === id);
+            if (numberSpan) {
+                numberSpan.textContent = `Acción Correctiva #${index + 1}: ${accion.titulo || 'Sin título'}`;
+            }
+        }
+    }
+    
+    openAccionPhoto(accionId, campo, photoNum) {
+        // Use camera manager to open photo selector
+        const key = `${accionId}_${campo}_${photoNum}`;
+        cameraManager.open(null, null, (photo) => {
+            const accion = this.accionesCorrectivas.find(a => a.id === accionId);
+            if (accion) {
+                if (!accion.photos) accion.photos = {};
+                accion.photos[key] = photo;
+                this.updateAccionPhotoButton(accionId, campo, photoNum, photo);
+            }
+        });
+    }
+    
+    updateAccionPhotoButton(accionId, campo, photoNum, photo) {
+        const card = document.querySelector(`[data-id="${accionId}"]`);
+        if (!card) return;
+        const buttons = card.querySelectorAll('.btn-item-photo');
+        const campoIndex = ['descripcion', 'intervencion', 'resultado'].indexOf(campo);
+        if (campoIndex === -1) return;
+        const btnIndex = campoIndex * 4 + (photoNum - 1);
+        const btn = buttons[btnIndex];
+        if (btn && photo) {
+            btn.classList.add('has-photo');
+            btn.style.backgroundImage = `url(${photo.dataUrl})`;
+            btn.style.backgroundSize = 'cover';
+            btn.style.backgroundPosition = 'center';
+            btn.innerHTML = `<span class="photo-badge">✓ ${photoNum}</span>`;
+        }
+    }
+    
+    openGeneralPhoto(campo, photoNum) {
+        // Open camera for general sections (recomendaciones, conclusión)
+        const key = `${campo}_${photoNum}`;
+        cameraManager.open(null, null, (photo) => {
+            if (!this.generalPhotos) this.generalPhotos = {};
+            this.generalPhotos[key] = photo;
+            this.updateGeneralPhotoButton(campo, photoNum, photo);
+        });
+    }
+    
+    updateGeneralPhotoButton(campo, photoNum, photo) {
+        // Find the button in the section
+        const section = document.querySelector(`#${campo}`);
+        if (!section || !section.parentElement) return;
+        const container = section.parentElement.parentElement;
+        const buttons = container.querySelectorAll('.btn-item-photo');
+        const btn = buttons[photoNum - 1];
+        if (btn && photo) {
+            btn.classList.add('has-photo');
+            btn.style.backgroundImage = `url(${photo.dataUrl})`;
+            btn.style.backgroundSize = 'cover';
+            btn.style.backgroundPosition = 'center';
+            btn.innerHTML = `<span class="photo-badge">✓ ${photoNum}</span>`;
+        }
     }
     
     updateAccionCorrectiva(id, field, value) {

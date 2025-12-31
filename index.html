@@ -23,10 +23,6 @@
       <span class="tab-icon">⚙️</span>
       <span class="tab-label">Verificación</span>
     </button>
-    <button class="tab-btn" data-tab="firmas">
-      <span class="tab-icon">✍️</span>
-      <span class="tab-label">Firmas</span>
-    </button>
   </nav>
 
   <main>
@@ -189,6 +185,40 @@
         </div>
       </div>
     </section>
+
+    <!-- Firmas Digitales -->
+    <section class="card">
+      <h2>✍️ Firmas Digitales</h2>
+      <div class="firmas-container">
+        <!-- Firma Ingeniero -->
+        <div class="signature-section">
+          <h3>Ingeniero Valmet</h3>
+          <div class="form-field">
+            <label for="nombre-ingeniero">Nombre completo</label>
+            <input type="text" id="nombre-ingeniero" placeholder="Nombre del ingeniero">
+          </div>
+          <div class="signature-pad-container" id="signature-ingeniero-container" data-signature="ingeniero">
+            <div class="signature-placeholder">
+              ✍️ Toque aquí para firmar
+            </div>
+          </div>
+        </div>
+
+        <!-- Firma Cliente -->
+        <div class="signature-section">
+          <h3>Cliente</h3>
+          <div class="form-field">
+            <label for="nombre-cliente-firma">Nombre completo</label>
+            <input type="text" id="nombre-cliente-firma" placeholder="Nombre del cliente">
+          </div>
+          <div class="signature-pad-container" id="signature-cliente-container" data-signature="cliente">
+            <div class="signature-placeholder">
+              ✍️ Toque aquí para firmar
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
     </div>
 
     <!-- Tab Content: Verificación -->
@@ -222,6 +252,12 @@
         <div class="section-content" style="display: none;">
           <div class="form-field">
             <textarea id="recomendaciones" rows="5" placeholder="Recomendaciones..."></textarea>
+            <div class="item-photos">
+              <button class="btn-item-photo" onclick="app.openGeneralPhoto('recomendaciones', 1)">📷 1</button>
+              <button class="btn-item-photo" onclick="app.openGeneralPhoto('recomendaciones', 2)">📷 2</button>
+              <button class="btn-item-photo" onclick="app.openGeneralPhoto('recomendaciones', 3)">📷 3</button>
+              <button class="btn-item-photo" onclick="app.openGeneralPhoto('recomendaciones', 4)">📷 4</button>
+            </div>
           </div>
         </div>
       </section>
@@ -235,6 +271,12 @@
         <div class="section-content" style="display: none;">
           <div class="form-field">
             <textarea id="conclusion" rows="5" placeholder="Conclusión..."></textarea>
+            <div class="item-photos">
+              <button class="btn-item-photo" onclick="app.openGeneralPhoto('conclusion', 1)">📷 1</button>
+              <button class="btn-item-photo" onclick="app.openGeneralPhoto('conclusion', 2)">📷 2</button>
+              <button class="btn-item-photo" onclick="app.openGeneralPhoto('conclusion', 3)">📷 3</button>
+              <button class="btn-item-photo" onclick="app.openGeneralPhoto('conclusion', 4)">📷 4</button>
+            </div>
           </div>
         </div>
       </section>
