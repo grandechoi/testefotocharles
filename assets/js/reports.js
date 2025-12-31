@@ -15,7 +15,7 @@ class ReportsManager {
      */
     async generateReport(reportData) {
         try {
-            const { generalData, observations, sections, sectionPhotos, itemPhotos, hoursData } = reportData;
+            const { generalData, observations, sections, sectionPhotos, itemPhotos, hoursData, equipments } = reportData;
 
             // SEM VALIDAÇÃO - permite gerar com tudo em branco
 
@@ -27,7 +27,8 @@ class ReportsManager {
                 sectionPhotos,
                 itemPhotos,
                 reportData.signatures,  // Assinaturas
-                hoursData  // Horas trabalhadas
+                hoursData,  // Horas trabalhadas
+                equipments  // **NOVO**: Array de equipamentos
             );
 
             // Generate blob
@@ -50,8 +51,9 @@ class ReportsManager {
      * Creates Word document structure
      * @param {object} signatures - {ingeniero: {nombre, firma, fecha}, cliente: {nombre, firma, fecha}}
      * @param {object} hoursData - {rows: [], totals: {}}
+     * @param {array} equipments - Array de equipamentos [{number, sections, photos, acciones}, ...]
      */
-    async createDocument(generalData, observations, sections, sectionPhotos, itemPhotos, signatures = null, hoursData = null) {
+    async createDocument(generalData, observations, sections, sectionPhotos, itemPhotos, signatures = null, hoursData = null, equipments = null) {
         const { Document, Paragraph, TextRun, HeadingLevel, AlignmentType, ImageRun } = this.docx;
 
         const documentChildren = [];
@@ -143,7 +145,54 @@ class ReportsManager {
             );
         }
 
+        // ===== VERIFICATION SECTIONS - MÚLTIPLOS EQUIPAMENTOS =====
+        if (equipments && equipments.length > 0) {
+            // Iterar por cada equipamento
+            for (const equip of equipments) {
+                // Título do equipamento
+                documentChildren.push(
+                    new Paragraph({
+                        children: [new TextRun({
+                            text: `EQUIPO ${equip.number}`,
+                            bold: true,
+                            size: 28,
+                            color: "4A148C"  // Roxo
+                        })],
+                        heading: HeadingLevel.HEADING_1,
+                        spacing: { before: 600, after: 300 },
+                        alignment: AlignmentType.CENTER
+                    })
+                );
+                
+                // Verificações deste equipamento
+                await this.addVerificationSections(
+                    documentChildren, 
+                    equip.sections, 
+                    equip.sectionPhotos, 
+                    equip.itemPhotos
+                );
+                
+                // Acciones Correctivas deste equipamento
+                if (equip.accionesCorrectivas && equip.accionesCorrectivas.length > 0) {
+                    await this.addAccionesCorrectivas(
+                        documentChildren, 
+                        equip.accionesCorrectivas, 
+                        `EQUIPO ${equip.number}`
+                    );
+                }
+            }
+        } else {
+            // Modo legado - equipamento único
+            await this.addVerificationSections(documentChildren, sections, sectionPhotos, itemPhotos);
+            
+            // Acciones Correctivas (legado)
+            if (observations && observations.accionesCorrectivas && observations.accionesCorrectivas.length > 0) {
+                await this.addAccionesCorrectivas(documentChildren, observations.accionesCorrectivas);
+            }
+        }
+
         // Sections with items
+        /* CÓDIGO LEGADO - agora tratado por addVerificationSections()
         for (const [secao, itens] of Object.entries(sections)) {
             // Skip empty sections
             if (Object.keys(itens).length === 0) continue;
@@ -244,89 +293,7 @@ class ReportsManager {
                 }
             }
         }
-
-        // ===== ACCIONES CORRECTIVAS =====
-        if (observations && observations.accionesCorrectivas && observations.accionesCorrectivas.length > 0) {
-            documentChildren.push(
-                new Paragraph({
-                    children: [new TextRun({
-                        text: "Acciones Correctivas",
-                        bold: true,
-                        size: 26
-                    })],
-                    heading: HeadingLevel.HEADING_1,
-                    spacing: { before: 400, after: 200 }
-                })
-            );
-
-            for (const accion of observations.accionesCorrectivas) {
-                // Título da ação
-                documentChildren.push(
-                    new Paragraph({
-                        children: [new TextRun({
-                            text: accion.titulo || 'Acción Correctiva',
-                            bold: true,
-                            size: 24
-                        })],
-                        spacing: { before: 200, after: 100 }
-                    })
-                );
-
-                // Descripción del Problema
-                if (accion.descripcionProblema) {
-                    documentChildren.push(
-                        new Paragraph({
-                            children: [
-                                new TextRun({ text: "Descripción del Problema: ", bold: true }),
-                                new TextRun(accion.descripcionProblema)
-                            ],
-                            spacing: { after: 100 }
-                        })
-                    );
-
-                    // Fotos Descripción
-                    if (accion.photos && accion.photos.descripcion) {
-                        await this.addPhotosToDocument(documentChildren, accion.photos.descripcion);
-                    }
-                }
-
-                // Intervención
-                if (accion.intervencion) {
-                    documentChildren.push(
-                        new Paragraph({
-                            children: [
-                                new TextRun({ text: "Intervención: ", bold: true }),
-                                new TextRun(accion.intervencion)
-                            ],
-                            spacing: { after: 100 }
-                        })
-                    );
-
-                    // Fotos Intervención
-                    if (accion.photos && accion.photos.intervencion) {
-                        await this.addPhotosToDocument(documentChildren, accion.photos.intervencion);
-                    }
-                }
-
-                // Resultado
-                if (accion.resultado) {
-                    documentChildren.push(
-                        new Paragraph({
-                            children: [
-                                new TextRun({ text: "Resultado: ", bold: true }),
-                                new TextRun(accion.resultado)
-                            ],
-                            spacing: { after: 100 }
-                        })
-                    );
-
-                    // Fotos Resultado
-                    if (accion.photos && accion.photos.resultado) {
-                        await this.addPhotosToDocument(documentChildren, accion.photos.resultado);
-                    }
-                }
-            }
-        }
+        */ // FIM DO CÓDIGO LEGADO
 
         // ===== RECOMENDACIONES =====
         if (observations && observations.recomendaciones) {
@@ -1189,6 +1156,207 @@ class ReportsManager {
                 spacing: { before: 200, after: 600 }
             })
         );
+    }
+
+    /**
+     * Adiciona seções de verificação ao documento
+     * (usado tanto para modo legado quanto para multi-equipamento)
+     */
+    async addVerificationSections(documentChildren, sections, sectionPhotos, itemPhotos) {
+        const { Paragraph, TextRun, HeadingLevel, ImageRun } = this.docx;
+
+        for (const [secao, itens] of Object.entries(sections)) {
+            // Skip empty sections
+            if (Object.keys(itens).length === 0) continue;
+
+            // Section heading
+            documentChildren.push(
+                new Paragraph({
+                    children: [new TextRun({
+                        text: `Verificación del ${secao.toLowerCase()}`,
+                        bold: true,
+                        size: 26
+                    })],
+                    heading: HeadingLevel.HEADING_1,
+                    spacing: { before: 400, after: 200 }
+                })
+            );
+
+            // Section photo if exists
+            if (sectionPhotos[secao] && sectionPhotos[secao].dataUrl) {
+                try {
+                    const imageData = await this.dataUrlToArrayBuffer(sectionPhotos[secao].dataUrl);
+                    documentChildren.push(
+                        new Paragraph({
+                            children: [
+                                new ImageRun({
+                                    data: imageData,
+                                    transformation: {
+                                        width: 400,
+                                        height: 300
+                                    }
+                                })
+                            ],
+                            spacing: { after: 200 }
+                        })
+                    );
+                } catch (error) {
+                    console.error('Error adding section photo:', error);
+                }
+            }
+
+            // Items
+            for (const [item, estados] of Object.entries(itens)) {
+                // Item name
+                documentChildren.push(
+                    new Paragraph({
+                        children: [new TextRun({
+                            text: `Verificación de ${item.toLowerCase()}`,
+                            bold: true,
+                            size: 22
+                        })],
+                        spacing: { before: 200, after: 100 }
+                    })
+                );
+
+                // States
+                documentChildren.push(
+                    new Paragraph({
+                        children: [
+                            new TextRun("– "),
+                            new TextRun(estados)
+                        ],
+                        spacing: { after: 100 }
+                    })
+                );
+
+                // Item photos (NEW FORMAT - array)
+                const itemKey = `${secao}|${item}`;
+                const itemPhotoArray = itemPhotos[itemKey] || [];
+                
+                if (itemPhotoArray.length > 0) {
+                    const photos = [];
+                    for (const photo of itemPhotoArray) {
+                        try {
+                            const imageData = await this.dataUrlToArrayBuffer(photo.dataUrl);
+                            photos.push(
+                                new ImageRun({
+                                    data: imageData,
+                                    transformation: {
+                                        width: 180,
+                                        height: 135
+                                    }
+                                })
+                            );
+                        } catch (error) {
+                            console.error('Error adding item photo:', error);
+                        }
+                    }
+
+                    // Add photos side by side
+                    if (photos.length > 0) {
+                        documentChildren.push(
+                            new Paragraph({
+                                children: photos,
+                                spacing: { after: 200 }
+                            })
+                        );
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * Adiciona acciones correctivas ao documento
+     * @param {string} equipmentLabel - Label opcional para identificar o equipamento
+     */
+    async addAccionesCorrectivas(documentChildren, accionesCorrectivas, equipmentLabel = null) {
+        const { Paragraph, TextRun, HeadingLevel } = this.docx;
+
+        const title = equipmentLabel 
+            ? `Acciones Correctivas - ${equipmentLabel}` 
+            : "Acciones Correctivas";
+
+        documentChildren.push(
+            new Paragraph({
+                children: [new TextRun({
+                    text: title,
+                    bold: true,
+                    size: 26
+                })],
+                heading: HeadingLevel.HEADING_1,
+                spacing: { before: 400, after: 200 }
+            })
+        );
+
+        for (const accion of accionesCorrectivas) {
+            // Título da ação
+            documentChildren.push(
+                new Paragraph({
+                    children: [new TextRun({
+                        text: accion.titulo || 'Acción Correctiva',
+                        bold: true,
+                        size: 24
+                    })],
+                    spacing: { before: 200, after: 100 }
+                })
+            );
+
+            // Descripción del Problema
+            if (accion.descripcionProblema) {
+                documentChildren.push(
+                    new Paragraph({
+                        children: [
+                            new TextRun({ text: "Descripción del Problema: ", bold: true }),
+                            new TextRun(accion.descripcionProblema)
+                        ],
+                        spacing: { after: 100 }
+                    })
+                );
+
+                // Fotos Descripción
+                if (accion.photos && accion.photos.descripcion) {
+                    await this.addPhotosToDocument(documentChildren, accion.photos.descripcion);
+                }
+            }
+
+            // Intervención
+            if (accion.intervencion) {
+                documentChildren.push(
+                    new Paragraph({
+                        children: [
+                            new TextRun({ text: "Intervención: ", bold: true }),
+                            new TextRun(accion.intervencion)
+                        ],
+                        spacing: { after: 100 }
+                    })
+                );
+
+                // Fotos Intervención
+                if (accion.photos && accion.photos.intervencion) {
+                    await this.addPhotosToDocument(documentChildren, accion.photos.intervencion);
+                }
+            }
+
+            // Resultado
+            if (accion.resultado) {
+                documentChildren.push(
+                    new Paragraph({
+                        children: [
+                            new TextRun({ text: "Resultado: ", bold: true }),
+                            new TextRun(accion.resultado)
+                        ],
+                        spacing: { after: 100 }
+                    })
+                );
+
+                // Fotos Resultado
+                if (accion.photos && accion.photos.resultado) {
+                    await this.addPhotosToDocument(documentChildren, accion.photos.resultado);
+                }
+            }
+        }
     }
 }
 

@@ -178,6 +178,11 @@ class App {
             data.accionesCorrectivas = this.accionesCorrectivas || [];
             data.generalPhotos = this.generalPhotos || {};
             
+            // **NOVO**: Adicionar dados de múltiplos equipamentos
+            if (window.equipmentManager) {
+                data.equipments = window.equipmentManager.getAllEquipmentsData();
+            }
+            
             // Count photos for debugging
             let photoCount = 0;
             Object.values(data.itemPhotos || {}).forEach(photos => {
@@ -186,6 +191,19 @@ class App {
             Object.values(data.generalPhotos || {}).forEach(photos => {
                 if (Array.isArray(photos)) photoCount += photos.length;
             });
+            
+            // Contar fotos de todos os equipamentos
+            if (data.equipments && data.equipments.equipments) {
+                Object.values(data.equipments.equipments).forEach(equip => {
+                    Object.values(equip.itemPhotos || {}).forEach(photos => {
+                        if (Array.isArray(photos)) photoCount += photos.length;
+                    });
+                    Object.values(equip.generalPhotos || {}).forEach(photos => {
+                        if (Array.isArray(photos)) photoCount += photos.length;
+                    });
+                });
+            }
+            
             console.log(`📷 Total photos: ${photoCount}`);
             
             const draftName = prompt('Nombre del borrador:', 
@@ -383,15 +401,34 @@ class App {
             formsManager.populateObservations(data.observations);
             formsManager.populateHoursData(data.hoursData);
             formsManager.populateSignaturesData(data.signatures);
-            formsManager.updateAllDisplays();
+
+            // **NOVO**: Carregar dados de múltiplos equipamentos
+            if (window.equipmentManager && data.equipments) {
+                window.equipmentManager.loadAllEquipmentsData(data.equipments);
+            } else {
+                // Modo legado - atualizar displays diretamente
+                formsManager.updateAllDisplays();
+            }
 
             // Load acciones correctivas
             if (data.accionesCorrectivas && Array.isArray(data.accionesCorrectivas)) {
                 this.accionesCorrectivas = data.accionesCorrectivas;
-                this.renderAllAcciones();
+                
+                // Renderizar no container correto
+                if (window.equipmentManager) {
+                    const currentEquip = window.equipmentManager.currentEquipment;
+                    const container = document.getElementById(`acciones-correctivas-container-${currentEquip}`);
+                    if (container) {
+                        container.innerHTML = '';
+                        this.accionesCorrectivas.forEach(a => this.renderAccionCorrectiva(a, currentEquip));
+                    }
+                } else {
+                    this.renderAllAcciones();
+                }
             } else {
                 // Clear if no data
-                const container = document.getElementById('acciones-list');
+                const container = document.getElementById('acciones-correctivas-container') || 
+                                document.getElementById(`acciones-correctivas-container-${window.equipmentManager?.currentEquipment || 1}`);
                 if (container) container.innerHTML = '';
             }
 
@@ -458,11 +495,17 @@ class App {
             data.accionesCorrectivas = this.accionesCorrectivas || [];
             data.generalPhotos = this.generalPhotos || {};
             
+            // **NOVO**: Adicionar dados de múltiplos equipamentos
+            if (window.equipmentManager) {
+                data.equipments = window.equipmentManager.getAllEquipmentsData();
+            }
+            
             // Add metadata
             data._metadata = {
-                version: '1.0',
+                version: '2.0', // Incrementado para incluir múltiplos equipamentos
                 exportDate: new Date().toISOString(),
-                app: 'ReportManager'
+                app: 'ReportManager',
+                numEquipments: window.equipmentManager?.numEquipments || 1
             };
             
             // Convert to JSON
@@ -503,14 +546,21 @@ class App {
                     const data = JSON.parse(text);
                     
                     // Validate data structure
-                    if (!data.generalData && !data.sections) {
+                    if (!data.generalData && !data.sections && !data.equipments) {
                         throw new Error('Archivo no válido. No contiene datos de borrador.');
                     }
                     
                     // Confirm import
                     const sizeMB = (text.length / 1024 / 1024).toFixed(2);
-                    if (!confirm(`¿Importar borrador?\n\nTamaño: ${sizeMB} MB\nFecha de exportación: ${data._metadata?.exportDate || 'desconocida'}\n\nEsto reemplazará los datos actuales.`)) {
+                    const numEquipments = data.equipments?.numEquipments || 1;
+                    const equipInfo = numEquipments > 1 ? `\nEquipos: ${numEquipments}` : '';
+                    if (!confirm(`¿Importar borrador?\n\nTamaño: ${sizeMB} MB\nFecha de exportación: ${data._metadata?.exportDate || 'desconocida'}${equipInfo}\n\nEsto reemplazará los datos actuales.`)) {
                         return;
+                    }
+                    
+                    // **NOVO**: Restaurar número de equipamentos se houver
+                    if (window.equipmentManager && data.equipments?.numEquipments) {
+                        await window.equipmentManager.setNumberOfEquipments(data.equipments.numEquipments);
                     }
                     
                     // Load data
@@ -522,12 +572,29 @@ class App {
                     formsManager.populateObservations(data.observations);
                     formsManager.populateHoursData(data.hoursData);
                     formsManager.populateSignaturesData(data.signatures);
-                    formsManager.updateAllDisplays();
+                    
+                    // **NOVO**: Carregar dados de múltiplos equipamentos
+                    if (window.equipmentManager && data.equipments) {
+                        window.equipmentManager.loadAllEquipmentsData(data.equipments);
+                    } else {
+                        formsManager.updateAllDisplays();
+                    }
                     
                     // Load acciones correctivas
                     if (data.accionesCorrectivas) {
                         this.accionesCorrectivas = data.accionesCorrectivas;
-                        this.renderAllAcciones();
+                        
+                        // Renderizar no container correto
+                        if (window.equipmentManager) {
+                            const currentEquip = window.equipmentManager.currentEquipment;
+                            const container = document.getElementById(`acciones-correctivas-container-${currentEquip}`);
+                            if (container) {
+                                container.innerHTML = '';
+                                this.accionesCorrectivas.forEach(a => this.renderAccionCorrectiva(a, currentEquip));
+                            }
+                        } else {
+                            this.renderAllAcciones();
+                        }
                     }
                     
                     // Load general photos
@@ -842,6 +909,38 @@ class App {
                     fecha: new Date().toLocaleDateString('es-ES')
                 }
             };
+
+            // **MULTI-EQUIPAMENTO**: Coletar dados de todos os equipamentos
+            if (window.equipmentManager && window.equipmentManager.numEquipments > 1) {
+                // Salvar equipamento atual antes de iterar
+                window.equipmentManager.saveCurrentEquipmentData();
+                
+                // Coletar dados de cada equipamento
+                data.equipments = [];
+                for (let i = 1; i <= window.equipmentManager.numEquipments; i++) {
+                    const equipData = window.equipmentManager.equipmentData[i];
+                    if (equipData) {
+                        data.equipments.push({
+                            number: i,
+                            sections: equipData.sections || {},
+                            sectionPhotos: equipData.sectionPhotos || {},
+                            itemPhotos: equipData.itemPhotos || {},
+                            accionesCorrectivas: equipData.acciones || [],
+                            generalPhotos: equipData.generalPhotos || {},
+                            recomendaciones: equipData.recomendaciones || '',
+                            conclusion: equipData.conclusion || ''
+                        });
+                    }
+                }
+                
+                // Recomendaciones e Conclusion do último equipamento (ou podem ser compartilhados)
+                const lastEquip = window.equipmentManager.equipmentData[window.equipmentManager.numEquipments];
+                if (lastEquip) {
+                    data.observations.recomendaciones = lastEquip.recomendaciones || data.observations.recomendaciones;
+                    data.observations.conclusion = lastEquip.conclusion || data.observations.conclusion;
+                    data.observations.generalPhotos = lastEquip.generalPhotos || data.observations.generalPhotos;
+                }
+            }
 
             // SEM VALIDAÇÃO - permite gerar com tudo em branco
 

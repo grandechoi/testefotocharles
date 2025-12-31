@@ -648,20 +648,27 @@ class FormsManager {
     }
 
     /**
-     * Salva todos os dados
+     * Salva todos os dados (incluindo múltiplos equipamentos)
      */
     async saveData() {
         try {
             const data = {
                 generalData: this.collectGeneralData(),
                 observations: this.collectObservations(),
-                itemStates: this.itemStates,
-                sectionPhotos: this.sectionPhotos,
-                itemPhotos: this.itemPhotos,
                 hoursData: this.collectHoursData(),
                 signatures: this.collectSignaturesData(),
                 timestamp: Date.now()
             };
+
+            // Adicionar dados de equipamentos se existir o equipment manager
+            if (window.equipmentManager) {
+                data.equipments = window.equipmentManager.getAllEquipmentsData();
+            } else {
+                // Modo legado - um único equipamento
+                data.itemStates = this.itemStates;
+                data.sectionPhotos = this.sectionPhotos;
+                data.itemPhotos = this.itemPhotos;
+            }
 
             await db.save('currentReport', data);
             console.log('✅ Data saved successfully');
@@ -671,24 +678,28 @@ class FormsManager {
     }
 
     /**
-     * Carrega dados salvos
+     * Carrega dados salvos (incluindo múltiplos equipamentos)
      */
     async loadData() {
         try {
             const data = await db.load('currentReport');
             if (!data) return;
 
-            this.itemStates = data.itemStates || {};
-            this.sectionPhotos = data.sectionPhotos || {};
-            this.itemPhotos = data.itemPhotos || {};
-
             this.populateGeneralData(data.generalData);
             this.populateObservations(data.observations);
             this.populateHoursData(data.hoursData);
             this.populateSignaturesData(data.signatures);
             
-            // Update UI
-            this.updateAllDisplays();
+            // Carregar dados de equipamentos
+            if (window.equipmentManager && data.equipments) {
+                window.equipmentManager.loadAllEquipmentsData(data.equipments);
+            } else if (data.itemStates) {
+                // Modo legado - um único equipamento
+                this.itemStates = data.itemStates || {};
+                this.sectionPhotos = data.sectionPhotos || {};
+                this.itemPhotos = data.itemPhotos || {};
+                this.updateAllDisplays();
+            }
             
             console.log('✅ Data loaded successfully');
         } catch (error) {
@@ -804,20 +815,59 @@ class FormsManager {
             if (window.app.accionesCorrectivas) {
                 window.app.accionesCorrectivas = [];
             }
-            const container = document.getElementById('acciones-correctivas-container');
-            if (container) container.innerHTML = '';
-            
-            // Limpar fotos gerais (recomendaciones, conclusion)
             if (window.app.generalPhotos) {
                 window.app.generalPhotos = {};
             }
-            ['recomendaciones', 'conclusion'].forEach(campo => {
-                const photoContainer = document.getElementById(`${campo}-photos`);
-                if (photoContainer) photoContainer.innerHTML = '';
-            });
+            
+            // Limpar containers de múltiplos equipamentos
+            if (window.equipmentManager) {
+                const numEquipments = window.equipmentManager.numEquipments;
+                for (let i = 1; i <= numEquipments; i++) {
+                    const container = document.getElementById(`acciones-correctivas-container-${i}`);
+                    if (container) container.innerHTML = '';
+                    
+                    ['recomendaciones', 'conclusion'].forEach(campo => {
+                        const photoContainer = document.getElementById(`${campo}-photos-${i}`);
+                        if (photoContainer) {
+                            const addBtn = photoContainer.querySelector('.btn-add-photo');
+                            photoContainer.innerHTML = '';
+                            if (addBtn) photoContainer.appendChild(addBtn.cloneNode(true));
+                        }
+                        
+                        const textarea = document.getElementById(`${campo}-${i}`);
+                        if (textarea) textarea.value = '';
+                    });
+                }
+                
+                // Resetar dados de todos os equipamentos
+                window.equipmentManager.equipmentData = {};
+                for (let i = 1; i <= numEquipments; i++) {
+                    window.equipmentManager.equipmentData[i] = {
+                        sections: {},
+                        sectionPhotos: {},
+                        itemPhotos: {},
+                        acciones: [],
+                        generalPhotos: {},
+                        recomendaciones: '',
+                        conclusion: ''
+                    };
+                }
+                
+                // Recarregar equipamento atual
+                window.equipmentManager.loadEquipmentData(window.equipmentManager.currentEquipment);
+            } else {
+                // Modo legado - container único
+                const container = document.getElementById('acciones-correctivas-container');
+                if (container) container.innerHTML = '';
+                
+                ['recomendaciones', 'conclusion'].forEach(campo => {
+                    const photoContainer = document.getElementById(`${campo}-photos`);
+                    if (photoContainer) photoContainer.innerHTML = '';
+                });
+            }
         }
 
-        console.log('✅ All data cleared (including signatures, hours, acciones, and general photos)');
+        alert('✅ Todos los datos han sido borrados');
     }
 
     /**
