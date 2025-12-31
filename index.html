@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ReportManager - Valmet QCS</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="stylesheet" href="assets/css/styles.css">
+</head>
+<body>
+  <header>
+    <h1>📋 ReportManager</h1>
+    <p class="subtitle">Generador de Informes QCS - Valmet</p>
+  </header>
+
+  <main>
+    <!-- Sección de Datos Generales -->
+    <section class="card">
+      <h2>📋 Datos Generales</h2>
+      
+      <div class="form-row">
+        <div class="form-field">
+          <label for="año">Año</label>
+          <input type="number" id="año" placeholder="2025">
+        </div>
+        <div class="form-field">
+          <label for="semana">Semana</label>
+          <input type="number" id="semana" placeholder="1-52">
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-field">
+          <label for="cliente">Cliente</label>
+          <input type="text" id="cliente" placeholder="Nombre del cliente">
+        </div>
+        <div class="form-field">
+          <label for="albaran">Albarán</label>
+          <input type="text" id="albaran" placeholder="Número de albarán">
+        </div>
+      </div>
+
+      <div class="form-field">
+        <label for="cod-ingeniero">Código Ingeniero</label>
+        <input type="text" id="cod-ingeniero" placeholder="Código">
+      </div>
+
+      <div class="form-field">
+        <label for="ubicacion">Ubicación del escáner</label>
+        <textarea id="ubicacion" rows="2" placeholder="Ubicación..."></textarea>
+      </div>
+
+      <div class="form-field">
+        <label for="perfiles">Perfiles en el aire</label>
+        <textarea id="perfiles" rows="3" placeholder="Perfiles..."></textarea>
+      </div>
+
+      <div class="form-field">
+        <label for="peticiones">Peticiones del cliente</label>
+        <textarea id="peticiones" rows="3" placeholder="Peticiones..."></textarea>
+      </div>
+    </section>
+
+    <!-- Sección de Verificaciones -->
+    <section class="card">
+      <h2>⚙️ Verificación de Sistemas</h2>
+      <div id="verification-sections"></div>
+      <button type="button" id="add-verification" class="btn btn-secondary">
+        ➕ Añadir Verificación
+      </button>
+    </section>
+
+    <!-- Sección de Observaciones -->
+    <section class="card">
+      <h2>📝 Observaciones</h2>
+      <textarea id="observaciones" rows="5" placeholder="Observaciones adicionales..."></textarea>
+    </section>
+
+    <!-- Botones de Acción -->
+    <section class="actions">
+      <button type="button" id="save-draft" class="btn btn-secondary">
+        💾 Guardar Borrador
+      </button>
+      <button type="button" id="load-draft" class="btn btn-secondary">
+        📂 Cargar Borrador
+      </button>
+      <button type="button" id="generate-report" class="btn btn-primary">
+        📄 Generar Informe Word
+      </button>
+      <button type="button" id="clear-all" class="btn btn-danger">
+        🗑️ Borrar Todo
+      </button>
+    </section>
+
+    <!-- Status -->
+    <div id="status" role="status" aria-live="polite"></div>
+  </main>
+
+  <!-- Modal para añadir fotos -->
+  <div id="photo-modal" class="modal hidden" role="dialog" aria-hidden="true">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>📸 Añadir Fotos</h3>
+        <button type="button" class="modal-close" aria-label="Cerrar">&times;</button>
+      </div>
+      <div class="modal-body">
+        <video id="camera-preview" autoplay playsinline class="hidden"></video>
+        <canvas id="camera-snapshot" class="hidden"></canvas>
+        
+        <div class="photo-options">
+          <button type="button" id="open-camera" class="btn btn-primary">
+            📷 Usar Cámara
+          </button>
+          <button type="button" id="take-photo" class="btn btn-success hidden">
+            ✓ Capturar
+          </button>
+          <button type="button" id="close-camera" class="btn btn-secondary hidden">
+            ✕ Cerrar Cámara
+          </button>
+          <label for="file-input" class="btn btn-secondary">
+            📁 Elegir Archivo
+          </label>
+          <input type="file" id="file-input" accept="image/*" class="hidden">
+        </div>
+
+        <div id="selected-photos" class="photo-grid"></div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" id="confirm-photos" class="btn btn-primary">
+          ✓ Confirmar Fotos
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal para cargar borradores -->
+  <div id="draft-modal" class="modal hidden" role="dialog" aria-hidden="true">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>📂 Borradores Guardados</h3>
+        <button type="button" class="modal-close" aria-label="Cerrar">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div id="draft-list"></div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/docx@7.8.2/build/index.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/file-saver@2.0.5/dist/FileSaver.min.js"></script>
+  <script src="assets/js/database.js"></script>
+  <script src="assets/js/camera.js"></script>
+  <script src="assets/js/forms.js"></script>
+  <script src="assets/js/reports.js"></script>
+  <script src="assets/js/app.js"></script>
+</body>
+</html>
