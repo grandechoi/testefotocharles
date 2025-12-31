@@ -84,11 +84,7 @@ class FormsManager {
             const btnState = itemElement.querySelector('.btn-select-state');
             btnState.addEventListener('click', () => this.openStateSelector(secao, item));
 
-            // Photo buttons
-            const btnPhoto1 = itemElement.querySelector('.btn-item-photo-1');
-            const btnPhoto2 = itemElement.querySelector('.btn-item-photo-2');
-            btnPhoto1.addEventListener('click', () => this.openPhotoSelector(secao, item, 1));
-            btnPhoto2.addEventListener('click', () => this.openPhotoSelector(secao, item, 2));
+            // Photo buttons - listeners adicionados dinamicamente por updateItemPhotoButton
         });
 
         return card;
@@ -129,10 +125,10 @@ class FormsManager {
                     ${hasStates ? `<span class="state-count">(${states.length})</span>` : ''}
                 </button>
                 <div class="item-photos">
-                    <button class="btn-item-photo btn-item-photo-1" title="Foto 1">
+                    <button class="btn-item-photo btn-item-photo-1" title="Foto 1" data-secao="${secao}" data-item="${item}" data-photo="1">
                         📷 1
                     </button>
-                    <button class="btn-item-photo btn-item-photo-2" title="Foto 2">
+                    <button class="btn-item-photo btn-item-photo-2" title="Foto 2" data-secao="${secao}" data-item="${item}" data-photo="2">
                         📷 2
                     </button>
                 </div>
@@ -449,14 +445,36 @@ class FormsManager {
         if (itemElement) {
             const btn = itemElement.querySelector(`.btn-item-photo-${photoNumber}`);
             if (btn) {
-                btn.classList.add('has-photo');
-                btn.textContent = `✓ ${photoNumber}`;
+                const key = `${secao}|${item}|${photoNumber}`;
+                const photo = this.itemPhotos[key];
                 
-                // Add click to view
-                btn.onclick = (e) => {
-                    e.stopPropagation();
-                    this.viewPhoto(secao, item, photoNumber);
-                };
+                // Remover todos os listeners antigos clonando o botão
+                const newBtn = btn.cloneNode(false);
+                btn.parentNode.replaceChild(newBtn, btn);
+                
+                if (photo) {
+                    // Tem foto - mostrar thumbnail e listener para visualizar
+                    newBtn.classList.add('has-photo');
+                    newBtn.style.backgroundImage = `url(${photo.dataUrl})`;
+                    newBtn.style.backgroundSize = 'cover';
+                    newBtn.style.backgroundPosition = 'center';
+                    newBtn.innerHTML = `<span class="photo-badge">✓ ${photoNumber}</span>`;
+                    
+                    newBtn.onclick = (e) => {
+                        e.stopPropagation();
+                        this.viewPhoto(secao, item, photoNumber);
+                    };
+                } else {
+                    // Sem foto - mostrar ícone e listener para adicionar
+                    newBtn.classList.remove('has-photo');
+                    newBtn.style.backgroundImage = '';
+                    newBtn.textContent = `📷 ${photoNumber}`;
+                    
+                    newBtn.onclick = (e) => {
+                        e.stopPropagation();
+                        this.openPhotoSelector(secao, item, photoNumber);
+                    };
+                }
             }
         }
     }
@@ -492,7 +510,7 @@ class FormsManager {
         modal.querySelector('.btn-delete-photo').onclick = () => {
             if (confirm('¿Eliminar esta foto?')) {
                 delete this.itemPhotos[key];
-                this.updateItemPhotoButton(secao, item, photoNumber);
+                this.updateItemPhotoButton(secao, item, photoNumber); // Atualiza para mostrar ícone sem foto
                 this.saveData();
                 document.body.removeChild(modal);
             }
@@ -710,22 +728,13 @@ class FormsManager {
             }
         });
 
-        // Update item photos
-        Object.entries(this.itemPhotos).forEach(([key, photo]) => {
-            const [secao, item, photoNumber] = key.split('|');
-            const itemIndex = TOPICOS_INSPECAO[secao].indexOf(item);
-            
-            const itemElement = this.sectionsContainer.querySelector(
-                `[data-section="${secao}"] .item-row[data-item-index="${itemIndex}"]`
-            );
-
-            if (itemElement) {
-                const btn = itemElement.querySelector(`.btn-item-photo-${photoNumber}`);
-                if (btn) {
-                    btn.classList.add('has-photo');
-                    btn.textContent = `✓ ${photoNumber}`;
-                }
-            }
+        // Update item photos - atualiza TODOS os botões (com e sem foto)
+        Object.keys(TOPICOS_INSPECAO).forEach(secao => {
+            TOPICOS_INSPECAO[secao].forEach(item => {
+                // Atualizar botões de foto 1 e 2 para cada item
+                this.updateItemPhotoButton(secao, item, 1);
+                this.updateItemPhotoButton(secao, item, 2);
+            });
         });
     }
 
