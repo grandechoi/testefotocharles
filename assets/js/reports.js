@@ -355,10 +355,10 @@ class ReportsManager {
         const albaran = generalData.albaran || '000000';
         const codIngeniero = generalData.codIngeniero || 'LAL';
         
-        // Sanitize strings (substituir espaços e caracteres especiais por _)
+        // Sanitize strings - converter para maiúsculas e manter letras e números
         const sanitizedEmpresa = empresa.toUpperCase().replace(/[^A-Z0-9]/g, '_');
-        const sanitizedAlbaran = albaran.replace(/[^A-Z0-9]/g, '_');
-        const sanitizedCodigo = codIngeniero.replace(/[^A-Z0-9]/g, '_');
+        const sanitizedAlbaran = albaran.toUpperCase().replace(/[^A-Z0-9]/g, '_');
+        const sanitizedCodigo = codIngeniero.toUpperCase().replace(/[^A-Z0-9]/g, '_');
         
         // Formato: ANO_W##_EMPRESA_ALBARAN_CODIGO_QCS.docx
         const fileName = `${año}_W${semana}_${sanitizedEmpresa}_${sanitizedAlbaran}_${sanitizedCodigo}_QCS.docx`;
