@@ -1,179 +1,146 @@
 /**
- * Database Module - Gerenciamento de dados com LocalStorage
- * Responsável por salvar/carregar relatórios e rascunhos
+ * Database Module - IndexedDB para gerenciamento de drafts
  */
 
-const DB_KEY_DRAFTS = "reportmanager:drafts";
-const DB_KEY_CURRENT = "reportmanager:current";
+const DB_NAME = 'ReportManagerDB';
+const DB_VERSION = 1;
+const STORE_DRAFTS = 'drafts';
 
 class DatabaseManager {
+  constructor() {
+    this.db = null;
+    this.initPromise = this.init();
+  }
+
+  async init() {
+    return new Promise((resolve, reject) => {
+      const request = indexedDB.open(DB_NAME, DB_VERSION);
+
+      request.onerror = () => reject(request.error);
+      request.onsuccess = () => {
+        this.db = request.result;
+        resolve(this.db);
+      };
+
+      request.onupgradeneeded = (event) => {
+        const db = event.target.result;
+        
+        // Create drafts store
+        if (!db.objectStoreNames.contains(STORE_DRAFTS)) {
+          const store = db.createObjectStore(STORE_DRAFTS, { keyPath: 'name' });
+          store.createIndex('timestamp', 'timestamp', { unique: false });
+        }
+      };
+    });
+  }
+
+  async ensureDB() {
+    if (!this.db) {
+      await this.initPromise;
+    }
+    return this.db;
+  }
+
   /**
-   * Salva dados atuais do formulário
+   * Get all items from a store
    */
+  async getAll(storeName) {
+    const db = await this.ensureDB();
+    return new Promise((resolve, reject) => {
+      const transaction = db.transaction(storeName, 'readonly');
+      const store = transaction.objectStore(storeName);
+      const request = store.getAll();
+
+      request.onsuccess = () => resolve(request.result || []);
+      request.onerror = () => reject(request.error);
+    });
+  }
+
+  /**
+   * Put (add or update) an item in a store
+   */
+  async put(storeName, item) {
+    const db = await this.ensureDB();
+    return new Promise((resolve, reject) => {
+      const transaction = db.transaction(storeName, 'readwrite');
+      const store = transaction.objectStore(storeName);
+      const request = store.put(item);
+
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error);
+    });
+  }
+
+  /**
+   * Get a single item by key
+   */
+  async get(storeName, key) {
+    const db = await this.ensureDB();
+    return new Promise((resolve, reject) => {
+      const transaction = db.transaction(storeName, 'readonly');
+      const store = transaction.objectStore(storeName);
+      const request = store.get(key);
+
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error);
+    });
+  }
+
+  /**
+   * Delete an item by key
+   */
+  async delete(storeName, key) {
+    const db = await this.ensureDB();
+    return new Promise((resolve, reject) => {
+      const transaction = db.transaction(storeName, 'readwrite');
+      const store = transaction.objectStore(storeName);
+      const request = store.delete(key);
+
+      request.onsuccess = () => resolve(true);
+      request.onerror = () => reject(request.error);
+    });
+  }
+
+  /**
+   * Clear all items from a store
+   */
+  async clear(storeName) {
+    const db = await this.ensureDB();
+    return new Promise((resolve, reject) => {
+      const transaction = db.transaction(storeName, 'readwrite');
+      const store = transaction.objectStore(storeName);
+      const request = store.clear();
+
+      request.onsuccess = () => resolve(true);
+      request.onerror = () => reject(request.error);
+    });
+  }
+
+  // ===== Legacy localStorage methods for backward compatibility =====
+  
   saveCurrent(data) {
     try {
-      localStorage.setItem(DB_KEY_CURRENT, JSON.stringify(data));
+      localStorage.setItem('reportmanager:current', JSON.stringify(data));
       return true;
     } catch (error) {
-      console.error("Erro ao salvar dados atuais:", error);
+      console.error('Erro ao salvar dados atuais:', error);
       return false;
     }
   }
 
-  /**
-   * Carrega dados atuais do formulário
-   */
   loadCurrent() {
     try {
-      const data = localStorage.getItem(DB_KEY_CURRENT);
+      const data = localStorage.getItem('reportmanager:current');
       return data ? JSON.parse(data) : null;
     } catch (error) {
-      console.error("Erro ao carregar dados atuais:", error);
+      console.error('Erro ao carregar dados atuais:', error);
       return null;
     }
   }
 
-  /**
-   * Limpa dados atuais
-   */
   clearCurrent() {
-    localStorage.removeItem(DB_KEY_CURRENT);
-  }
-
-  /**
-   * Lista todos os rascunhos salvos
-   */
-  listDrafts() {
-    try {
-      const drafts = localStorage.getItem(DB_KEY_DRAFTS);
-      return drafts ? JSON.parse(drafts) : [];
-    } catch (error) {
-      console.error("Erro ao listar rascunhos:", error);
-      return [];
-    }
-  }
-
-  /**
-   * Salva um rascunho
-   */
-  saveDraft(name, data) {
-    try {
-      const drafts = this.listDrafts();
-      const draft = {
-        id: Date.now(),
-        name: name,
-        data: data,
-        timestamp: new Date().toISOString(),
-        date: new Date().toLocaleString('es-ES')
-      };
-      
-      drafts.push(draft);
-      localStorage.setItem(DB_KEY_DRAFTS, JSON.stringify(drafts));
-      return true;
-    } catch (error) {
-      console.error("Erro ao salvar rascunho:", error);
-      return false;
-    }
-  }
-
-  /**
-   * Carrega um rascunho específico
-   */
-  loadDraft(draftId) {
-    try {
-      const drafts = this.listDrafts();
-      const draft = drafts.find(d => d.id === draftId);
-      return draft ? draft.data : null;
-    } catch (error) {
-      console.error("Erro ao carregar rascunho:", error);
-      return null;
-    }
-  }
-
-  /**
-   * Remove um rascunho
-   */
-  deleteDraft(draftId) {
-    try {
-      let drafts = this.listDrafts();
-      drafts = drafts.filter(d => d.id !== draftId);
-      localStorage.setItem(DB_KEY_DRAFTS, JSON.stringify(drafts));
-      return true;
-    } catch (error) {
-      console.error("Erro ao deletar rascunho:", error);
-      return false;
-    }
-  }
-
-  /**
-   * Limpa todos os rascunhos
-   */
-  clearAllDrafts() {
-    try {
-      localStorage.removeItem(DB_KEY_DRAFTS);
-      return true;
-    } catch (error) {
-      console.error("Erro ao limpar rascunhos:", error);
-      return false;
-    }
-  }
-
-  /**
-   * Obtém uso de armazenamento (estimativa)
-   */
-  getStorageUsage() {
-    let totalSize = 0;
-    for (let key in localStorage) {
-      if (localStorage.hasOwnProperty(key)) {
-        totalSize += localStorage[key].length + key.length;
-      }
-    }
-    return {
-      bytes: totalSize,
-      kb: (totalSize / 1024).toFixed(2),
-      mb: (totalSize / (1024 * 1024)).toFixed(2)
-    };
-  }
-
-  /**
-   * Generic save method
-   */
-  async save(key, data) {
-    try {
-      localStorage.setItem(`reportmanager:${key}`, JSON.stringify(data));
-      return true;
-    } catch (error) {
-      console.error(`Error saving ${key}:`, error);
-      throw error;
-    }
-  }
-
-  /**
-   * Generic load method
-   */
-  async load(key) {
-    try {
-      const data = localStorage.getItem(`reportmanager:${key}`);
-      return data ? JSON.parse(data) : null;
-    } catch (error) {
-      console.error(`Error loading ${key}:`, error);
-      return null;
-    }
-  }
-
-  /**
-   * Generic delete method
-   */
-  async delete(key) {
-    try {
-      localStorage.removeItem(`reportmanager:${key}`);
-      return true;
-    } catch (error) {
-      console.error(`Error deleting ${key}:`, error);
-      return false;
-    }
+    localStorage.removeItem('reportmanager:current');
   }
 }
 
-// Exportar instância global
 export const db = new DatabaseManager();
