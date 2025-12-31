@@ -177,143 +177,6 @@ class FormsManager {
     }
 
     /**
-     * Opens photo selector modal (camera + file + drag & drop)
-     */
-    openPhotoSelector(secao, item, photoNumber) {
-        const modal = document.createElement('div');
-        modal.className = 'photo-selector-modal';
-        modal.innerHTML = `
-            <div class="photo-selector-content">
-                <div class="photo-selector-header">
-                    <h3>📷 Seleccionar Foto</h3>
-                    <button class="btn-close-photo-modal">✕</button>
-                </div>
-                <div class="photo-selector-body">
-                    <div class="photo-preview-area" id="photo-preview-area">
-                        <p>Arrastra una imagen aquí o selecciona una opción abajo</p>
-                    </div>
-                    <div class="photo-actions">
-                        <label class="btn-photo-action btn-file-input">
-                            📁 Buscar Archivo
-                            <input type="file" accept="image/*" style="display:none" id="file-input-photo">
-                        </label>
-                        <button class="btn-photo-action btn-open-camera">
-                            📷 Abrir Cámara
-                        </button>
-                    </div>
-                    <button class="btn-confirm-photo" style="display:none">
-                        ✓ Confirmar Foto
-                    </button>
-                </div>
-            </div>
-        `;
-
-        document.body.appendChild(modal);
-
-        let selectedPhoto = null;
-
-        // Preview area
-        const previewArea = modal.querySelector('#photo-preview-area');
-        const btnConfirm = modal.querySelector('.btn-confirm-photo');
-        const fileInput = modal.querySelector('#file-input-photo');
-        const btnCamera = modal.querySelector('.btn-open-camera');
-        const btnClose = modal.querySelector('.btn-close-photo-modal');
-
-        // Drag & Drop
-        previewArea.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            previewArea.classList.add('drag-over');
-        });
-
-        previewArea.addEventListener('dragleave', () => {
-            previewArea.classList.remove('drag-over');
-        });
-
-        previewArea.addEventListener('drop', async (e) => {
-            e.preventDefault();
-            previewArea.classList.remove('drag-over');
-
-            const file = e.dataTransfer.files[0];
-            if (file && file.type.startsWith('image/')) {
-                await this.showPhotoPreview(file, previewArea, btnConfirm);
-                selectedPhoto = await this.fileToPhotoObject(file);
-            } else {
-                alert('Por favor, arrastra una imagen válida');
-            }
-        });
-
-        // File input
-        fileInput.addEventListener('change', async (e) => {
-            const file = e.target.files[0];
-            if (file) {
-                await this.showPhotoPreview(file, previewArea, btnConfirm);
-                selectedPhoto = await this.fileToPhotoObject(file);
-            }
-        });
-
-        // Detect file input cancel/close - when user opens but doesn't select anything
-        // This prevents modal freeze when canceling file selection
-        fileInput.addEventListener('cancel', () => {
-            // Modal remains open, user can try again or close manually
-        });
-
-        // Focus event as fallback for browsers that don't support 'cancel' event
-        let fileInputOpened = false;
-        fileInput.addEventListener('click', () => {
-            fileInputOpened = true;
-        });
-
-        // If file dialog was opened but no file selected, allow modal to remain functional
-        window.addEventListener('focus', function checkFileInputCancel() {
-            if (fileInputOpened && !fileInput.files.length) {
-                fileInputOpened = false;
-            }
-        }, { once: true });
-
-        // Camera button
-        btnCamera.addEventListener('click', async () => {
-            try {
-                const photo = await cameraManager.takePhoto();
-                await this.showPhotoPreview(null, previewArea, btnConfirm, photo.dataUrl);
-                selectedPhoto = photo;
-            } catch (error) {
-                if (error.message !== 'Captura cancelada') {
-                    alert('Error al abrir cámara: ' + error.message);
-                }
-            }
-        });
-
-        // Confirm button
-        btnConfirm.addEventListener('click', () => {
-            if (selectedPhoto) {
-                if (item) {
-                    // Item photo
-                    const key = `${secao}|${item}|${photoNumber}`;
-                    this.itemPhotos[key] = selectedPhoto;
-                    this.updateItemPhotoButton(secao, item, photoNumber);
-                } else {
-                    // Section photo
-                    this.sectionPhotos[secao] = selectedPhoto;
-                    this.updateSectionPhotoPreview(secao);
-                }
-                this.saveData();
-                document.body.removeChild(modal);
-            }
-        });
-
-        // Close button
-        btnClose.addEventListener('click', () => {
-            document.body.removeChild(modal);
-        });
-
-        // Close on overlay click
-        modal.addEventListener('click', (e) => {
-            if (e.target === modal) {
-                document.body.removeChild(modal);
-            }
-        });
-    }
-
     /**
      * Shows photo preview in modal
      */
@@ -841,14 +704,10 @@ class FormsManager {
             }
         });
 
-        // Update item photos - atualiza TODOS os botões (com e sem foto)
+        // Update item photos - render galleries for all items
         Object.keys(TOPICOS_INSPECAO).forEach(secao => {
             TOPICOS_INSPECAO[secao].forEach(item => {
-                // Atualizar botões de foto 1, 2, 3 e 4 para cada item
-                this.updateItemPhotoButton(secao, item, 1);
-                this.updateItemPhotoButton(secao, item, 2);
-                this.updateItemPhotoButton(secao, item, 3);
-                this.updateItemPhotoButton(secao, item, 4);
+                this.renderItemPhotos(secao, item);
             });
         });
     }
@@ -902,13 +761,10 @@ class FormsManager {
             if (totalEl) totalEl.textContent = '0';
         });
 
-        // Limpar todas as 4 fotos de cada item
+        // Limpar galleries de fotos de cada item
         Object.keys(TOPICOS_INSPECAO).forEach(secao => {
             TOPICOS_INSPECAO[secao].forEach(item => {
-                this.updateItemPhotoButton(secao, item, 1);
-                this.updateItemPhotoButton(secao, item, 2);
-                this.updateItemPhotoButton(secao, item, 3);
-                this.updateItemPhotoButton(secao, item, 4);
+                this.renderItemPhotos(secao, item);
             });
         });
 
