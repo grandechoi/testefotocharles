@@ -10,24 +10,45 @@ import { StateSelectorModal } from './state-selector.js';
 
 class FormsManager {
     constructor() {
-        this.sectionsContainer = document.getElementById('sections-container');
+        // **ATUALIZADO**: Agora usa container dinâmico por equipamento
+        this.sectionsContainer = null; // Será definido dinamicamente
         this.itemStates = {}; // { "secao|item": ["estado1", "estado2"] }
         this.sectionPhotos = {}; // { "secao": { file, dataUrl } }
         this.itemPhotos = {}; // Now arrays: { "secao|item": [{file, dataUrl, timestamp}, ...] }
         this.stateModal = new StateSelectorModal();
         
-        this.init();
+        // **NOVO**: Não chama init() automaticamente, será chamado pelo equipmentManager
+        // this.init();
     }
 
     init() {
-        this.renderAllSections();
+        // **ATUALIZADO**: Só renderiza se tiver container definido
+        if (this.sectionsContainer) {
+            this.renderAllSections();
+        }
         this.loadData();
+    }
+    
+    /**
+     * Define o container atual para um equipamento específico
+     */
+    setCurrentContainer(containerId) {
+        this.sectionsContainer = document.getElementById(containerId);
+        if (!this.sectionsContainer) {
+            console.error(`Container ${containerId} não encontrado!`);
+        }
     }
 
     /**
      * Renderiza TODAS as seções e itens pré-definidos
      */
     renderAllSections() {
+        // **ATUALIZADO**: Verificar se container existe
+        if (!this.sectionsContainer) {
+            console.warn('sectionsContainer não definido, pulando renderização');
+            return;
+        }
+        
         this.sectionsContainer.innerHTML = '';
         
         Object.entries(TOPICOS_INSPECAO).forEach(([secao, itens], sectionIndex) => {

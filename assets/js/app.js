@@ -44,7 +44,7 @@ class App {
             // Initialize camera
             await cameraManager.init();
 
-            // **NOVO**: Initialize equipment manager
+            // **NOVO**: Initialize equipment manager ANTES de carregar dados
             equipmentManager.setNumberOfEquipments(1);
 
             // **NOVO**: Initialize hours table calculations
@@ -53,8 +53,10 @@ class App {
             // **NOVO**: Initialize acciones correctivas
             setTimeout(() => this.initAccionesCorrectivas(), 100);
 
-            // Load saved data on startup
-            await formsManager.loadData();
+            // Load saved data on startup (DEPOIS de criar containers)
+            setTimeout(async () => {
+                await formsManager.loadData();
+            }, 200);
 
             // Auto-save every minute
             setInterval(() => {
