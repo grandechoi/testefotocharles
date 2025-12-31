@@ -68,6 +68,12 @@ class App {
             loadDraftBtn.addEventListener('click', () => this.showDraftModal());
         }
 
+        // Check storage button
+        const checkStorageBtn = document.getElementById('check-storage');
+        if (checkStorageBtn) {
+            checkStorageBtn.addEventListener('click', () => this.checkStorage());
+        }
+
         // Generate report button
         const generateBtn = document.getElementById('generate-report');
         if (generateBtn) {
@@ -103,12 +109,42 @@ class App {
             
             if (!draftName) return;
 
-            // Save to localStorage with custom name
-            localStorage.setItem(`draft_${draftName}`, JSON.stringify(data));
+            // Sanitize draft name (remove invalid characters)
+            const safeName = draftName.replace(/[<>:"/\\|?*]/g, '_').substring(0, 50);
             
-            this.showStatus(`✅ Borrador "${draftName}" guardado`, 'success');
+            // Convert to JSON and check size
+            const dataStr = JSON.stringify(data);
+            const sizeKB = Math.round(dataStr.length / 1024);
+            
+            console.log(`📦 Borrador size: ${sizeKB} KB`);
+            
+            // Warn if data is very large (>2MB)
+            if (dataStr.length > 2 * 1024 * 1024) {
+                if (!confirm(`El borrador es muy grande (${sizeKB} KB). Esto puede causar problemas. ¿Continuar?`)) {
+                    return;
+                }
+            }
+            
+            // Try to save to localStorage
+            try {
+                localStorage.setItem(`draft_${safeName}`, dataStr);
+                this.showStatus(`✅ Borrador "${safeName}" guardado (${sizeKB} KB)`, 'success');
+            } catch (storageError) {
+                // Handle localStorage quota exceeded
+                if (storageError.name === 'QuotaExceededError') {
+                    alert('❌ Espacio insuficiente en el navegador.\n\n' +
+                          'Intente:\n' +
+                          '• Eliminar borradores antiguos\n' +
+                          '• Reducir el número de fotos\n' +
+                          `• Tamaño actual: ${sizeKB} KB`);
+                    this.showStatus('Error: Espacio insuficiente', 'error');
+                } else {
+                    throw storageError;
+                }
+            }
         } catch (error) {
             console.error('Error saving draft:', error);
+            alert(`Error al guardar borrador:\n${error.message}`);
             this.showStatus('Error al guardar borrador', 'error');
         }
     }
@@ -202,6 +238,54 @@ class App {
         localStorage.removeItem(key);
         this.showDraftModal(); // Refresh list
         this.showStatus('✅ Borrador eliminado', 'success');
+    }
+
+    checkStorage() {
+        try {
+            let totalSize = 0;
+            const items = [];
+
+            // Calculate size of each localStorage item
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                const value = localStorage.getItem(key);
+                const size = value ? value.length : 0;
+                totalSize += size;
+
+                if (key.startsWith('draft_')) {
+                    items.push({
+                        name: key.replace('draft_', ''),
+                        sizeKB: Math.round(size / 1024)
+                    });
+                }
+            }
+
+            const totalKB = Math.round(totalSize / 1024);
+            const totalMB = (totalKB / 1024).toFixed(2);
+
+            // Estimate available space (typical limit is 5-10MB)
+            const estimatedLimitMB = 5;
+            const usagePercent = Math.round((totalMB / estimatedLimitMB) * 100);
+
+            let message = `📊 Uso de Almacenamiento\n\n`;
+            message += `Total usado: ${totalKB} KB (${totalMB} MB)\n`;
+            message += `Uso estimado: ${usagePercent}% de ~${estimatedLimitMB}MB\n\n`;
+            message += `Borradores (${items.length}):\n`;
+            
+            items.sort((a, b) => b.sizeKB - a.sizeKB);
+            items.forEach(item => {
+                message += `• ${item.name}: ${item.sizeKB} KB\n`;
+            });
+
+            if (usagePercent > 80) {
+                message += `\n⚠️ Almacenamiento casi lleno!\nElimina borradores antiguos.`;
+            }
+
+            alert(message);
+        } catch (error) {
+            console.error('Error checking storage:', error);
+            alert('Error al verificar almacenamiento');
+        }
     }
 
     async generateReport() {

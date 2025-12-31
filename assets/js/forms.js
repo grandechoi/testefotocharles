@@ -317,14 +317,62 @@ class FormsManager {
     }
 
     /**
-     * Converts File to DataURL
+     * Converte File para dataURL com compressão
      */
-    fileToDataUrl(file) {
+    async fileToDataUrl(file) {
         return new Promise((resolve, reject) => {
             const reader = new FileReader();
-            reader.onload = (e) => resolve(e.target.result);
+            reader.onload = async (e) => {
+                try {
+                    // Comprimir imagem antes de salvar
+                    const compressed = await this.compressImage(e.target.result, 1920, 0.85);
+                    resolve(compressed);
+                } catch (error) {
+                    console.warn('Compression failed, using original:', error);
+                    resolve(e.target.result);
+                }
+            };
             reader.onerror = reject;
             reader.readAsDataURL(file);
+        });
+    }
+
+    /**
+     * Comprime imagem para reduzir tamanho em localStorage
+     */
+    async compressImage(dataUrl, maxWidth = 1920, quality = 0.85) {
+        return new Promise((resolve, reject) => {
+            const img = new Image();
+            img.onload = () => {
+                try {
+                    const canvas = document.createElement('canvas');
+                    let width = img.width;
+                    let height = img.height;
+
+                    // Redimensionar se necessário
+                    if (width > maxWidth) {
+                        height = (height * maxWidth) / width;
+                        width = maxWidth;
+                    }
+
+                    canvas.width = width;
+                    canvas.height = height;
+
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, width, height);
+
+                    // Comprimir como JPEG
+                    const compressed = canvas.toDataURL('image/jpeg', quality);
+                    
+                    console.log(`🖼️ Image compressed: ${Math.round(dataUrl.length/1024)}KB → ${Math.round(compressed.length/1024)}KB`);
+                    
+                    resolve(compressed);
+                } catch (error) {
+                    reject(error);
+                }
+            };
+            img.onerror = reject;
+            img.src = dataUrl;
         });
     }
 
