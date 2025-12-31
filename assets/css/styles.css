@@ -2209,3 +2209,135 @@ textarea {
     min-width: 100px;
   }
 }
+
+/* ============================================
+   EQUIPMENT SELECTOR & TABS
+   ============================================ */
+
+.equipment-selector-card {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+}
+
+.equipment-selector-card h2 {
+  color: white;
+  margin-bottom: 1rem;
+}
+
+.equipment-config {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.equipment-config .form-field {
+  flex: 1;
+  max-width: 300px;
+}
+
+.equipment-config label {
+  color: white;
+  font-weight: 600;
+}
+
+#num-equipments {
+  width: 100%;
+  padding: 12px 16px;
+  font-size: 16px;
+  font-weight: 600;
+  border: 2px solid white;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.95);
+  color: #667eea;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+#num-equipments:hover {
+  background: white;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.equipment-tabs {
+  display: flex;
+  gap: 8px;
+  padding: 1rem;
+  background: var(--surface);
+  border-bottom: 2px solid var(--border);
+  overflow-x: auto;
+  scroll-behavior: smooth;
+}
+
+.equipment-tab {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 20px;
+  background: white;
+  border: 2px solid var(--border);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s;
+  white-space: nowrap;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.equipment-tab:hover {
+  border-color: var(--primary);
+  background: var(--primary-light);
+  transform: translateY(-2px);
+}
+
+.equipment-tab.active {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: white;
+  box-shadow: 0 4px 12px rgba(0, 123, 255, 0.3);
+}
+
+.equipment-icon {
+  font-size: 20px;
+}
+
+.equipment-label {
+  font-size: 14px;
+}
+
+.equipment-container {
+  display: none;
+}
+
+.equipment-container.active {
+  display: block;
+  animation: fadeIn 0.3s ease-in;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 768px) {
+  .equipment-tabs {
+    padding: 0.5rem;
+    gap: 4px;
+  }
+  
+  .equipment-tab {
+    padding: 8px 12px;
+    font-size: 12px;
+  }
+  
+  .equipment-icon {
+    font-size: 16px;
+  }
+}

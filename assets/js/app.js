@@ -8,6 +8,7 @@ import { cameraManager } from './camera.js';
 import { reportsManager } from './reports.js';
 import { db } from './database.js';
 import { photoEditor } from './photo-editor.js';
+import { equipmentManager } from './equipment-manager.js';
 
 // Expose to window for console debugging
 window.db = db;
@@ -15,6 +16,7 @@ window.formsManager = formsManager;
 window.cameraManager = cameraManager;
 window.reportsManager = reportsManager;
 window.photoEditor = photoEditor;
+window.equipmentManager = equipmentManager;
 
 class App {
     constructor() {
@@ -42,6 +44,9 @@ class App {
             // Initialize camera
             await cameraManager.init();
 
+            // **NOVO**: Initialize equipment manager
+            equipmentManager.setNumberOfEquipments(1);
+
             // **NOVO**: Initialize hours table calculations
             this.initHoursTable();
             
@@ -64,6 +69,20 @@ class App {
             console.error('❌ Error initializing app:', error);
             this.showStatus('Error al inicializar', 'error');
         }
+    }
+    
+    /**
+     * Define número de equipamentos
+     */
+    setNumberOfEquipments(num) {
+        equipmentManager.setNumberOfEquipments(num);
+    }
+    
+    /**
+     * Troca para outro equipamento
+     */
+    switchEquipment(equipNum) {
+        equipmentManager.switchEquipment(equipNum);
     }
 
     async registerServiceWorker() {

@@ -221,57 +221,33 @@
 
     <!-- Tab Content: Verificación -->
     <div class="tab-content" id="tab-verificacion">
-      <section class="card">
-        <h2>⚙️ Verificación de Sistemas</h2>
-        <p class="subtitle">Seleccione los estados de cada elemento</p>
-        <div id="sections-container"></div>
-      </section>
-
-      <!-- Acciones Correctivas -->
-      <section class="card collapsed-section">
-        <div class="section-header-collapse" onclick="app.toggleCollapse(this)">
-          <h2>🔧 Acciones Correctivas</h2>
-          <span class="collapse-icon">▼</span>
-        </div>
-        <div class="section-content" style="display: none;">
-          <button type="button" id="add-accion-correctiva" class="btn btn-primary" style="margin-bottom: 1rem;">
-            ➕ Añadir Acción Correctiva
-          </button>
-          <div id="acciones-correctivas-container"></div>
-        </div>
-      </section>
-
-      <!-- Recomendaciones -->
-      <section class="card collapsed-section">
-        <div class="section-header-collapse" onclick="app.toggleCollapse(this)">
-          <h2>💡 Recomendaciones</h2>
-          <span class="collapse-icon">▼</span>
-        </div>
-        <div class="section-content" style="display: none;">
+      <!-- Equipment Selector -->
+      <section class="card equipment-selector-card">
+        <h2>🏭 Configuración de Equipos</h2>
+        <div class="equipment-config">
           <div class="form-field">
-            <textarea id="recomendaciones" rows="5" placeholder="Recomendaciones..."></textarea>
-            <div class="item-photos-gallery">
-              <button class="btn-add-photo" onclick="app.openGeneralPhoto('recomendaciones')">📷 +</button>
-            </div>
+            <label for="num-equipments">Cantidad de Equipos</label>
+            <select id="num-equipments" onchange="app.setNumberOfEquipments(this.value)">
+              <option value="1" selected>1 Equipo</option>
+              <option value="2">2 Equipos</option>
+              <option value="3">3 Equipos</option>
+              <option value="4">4 Equipos</option>
+              <option value="5">5 Equipos</option>
+            </select>
           </div>
         </div>
       </section>
 
-      <!-- Conclusión -->
-      <section class="card collapsed-section">
-        <div class="section-header-collapse" onclick="app.toggleCollapse(this)">
-          <h2>✅ Conclusión</h2>
-          <span class="collapse-icon">▼</span>
-        </div>
-        <div class="section-content" style="display: none;">
-          <div class="form-field">
-            <textarea id="conclusion" rows="5" placeholder="Conclusión..."></textarea>
-            <div class="item-photos-gallery">
-              <button class="btn-add-photo" onclick="app.openGeneralPhoto('conclusion')">📷 +</button>
-            </div>
-          </div>
-        </div>
-      </section>
+      <!-- Equipment Tabs Navigation -->
+      <nav class="equipment-tabs" id="equipment-tabs">
+        <button class="equipment-tab active" data-equipment="1" onclick="app.switchEquipment(1)">
+          <span class="equipment-icon">⚙️</span>
+          <span class="equipment-label">Equipo 1</span>
+        </button>
+      </nav>
+
+      <!-- Equipment Content Areas -->
+      <div id="equipment-containers"></div>
     </div>
 
     <!-- Tab Content: Firmas -->
@@ -417,6 +393,8 @@
   <script type="module" src="assets/js/state-selector.js"></script>
   <script type="module" src="assets/js/database.js"></script>
   <script type="module" src="assets/js/camera.js"></script>
+  <script type="module" src="assets/js/photo-editor.js"></script>
+  <script type="module" src="assets/js/equipment-manager.js"></script>
   <script type="module" src="assets/js/forms.js"></script>
   <script type="module" src="assets/js/reports.js"></script>
   <script type="module" src="assets/js/app.js"></script>
