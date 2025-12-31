@@ -332,7 +332,8 @@ class FormsManager {
                 <button class="btn-close-view">✕</button>
                 <img src="${photo.dataUrl}" alt="Foto">
                 <div class="photo-view-actions">
-                    <button class="btn-delete-photo">🗑️ Eliminar Foto</button>
+                    <button class="btn-edit-photo">✏️ Editar</button>
+                    <button class="btn-delete-photo">🗑️ Eliminar</button>
                 </div>
             </div>
         `;
@@ -341,6 +342,17 @@ class FormsManager {
 
         modal.querySelector('.btn-close-view').onclick = () => {
             document.body.removeChild(modal);
+        };
+
+        modal.querySelector('.btn-edit-photo').onclick = async () => {
+            document.body.removeChild(modal);
+            const editedPhoto = await window.photoEditor.openEditor(photo.dataUrl, (editedDataUrl) => {
+                const key = `${secao}|${item}`;
+                const photos = this.itemPhotos[key] || [];
+                photos[photoIndex] = { dataUrl: editedDataUrl, timestamp: Date.now() };
+                this.renderItemPhotos(secao, item);
+                this.saveData();
+            });
         };
 
         modal.querySelector('.btn-delete-photo').onclick = () => {

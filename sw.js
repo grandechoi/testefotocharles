@@ -1,4 +1,4 @@
-const CACHE_NAME = "reportmanager-v14";
+const CACHE_NAME = "reportmanager-v15";
 const ASSETS = [
   "./",
   "./index.html",
@@ -8,6 +8,7 @@ const ASSETS = [
   "./assets/js/database.js",
   "./assets/js/camera.js",
   "./assets/js/forms.js",
+  "./assets/js/photo-editor.js",
   "./assets/js/reports.js",
   "./assets/icons/icon-192.png",
   "./assets/icons/icon-512.png",

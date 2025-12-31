@@ -1887,6 +1887,268 @@ textarea {
   box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.1);
 }
 
+/* ============================================
+   PHOTO EDITOR MODAL
+   ============================================ */
+
+.photo-editor-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.95);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 25000;
+  padding: 20px;
+}
+
+.photo-editor-container {
+  background: #2c2c2c;
+  border-radius: 12px;
+  width: 100%;
+  max-width: 900px;
+  max-height: 95vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.photo-editor-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  border-bottom: 2px solid #404040;
+  background: #1e1e1e;
+}
+
+.photo-editor-header h3 {
+  margin: 0;
+  color: #4CAF50;
+  font-size: 20px;
+}
+
+.btn-close-editor {
+  background: none;
+  border: none;
+  color: #fff;
+  font-size: 24px;
+  cursor: pointer;
+  padding: 0;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: background 0.2s;
+}
+
+.btn-close-editor:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.photo-editor-toolbar {
+  display: flex;
+  gap: 20px;
+  padding: 12px 20px;
+  background: #252525;
+  border-bottom: 1px solid #404040;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.toolbar-section {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  padding: 4px;
+  background: #1e1e1e;
+  border-radius: 8px;
+}
+
+.tool-btn {
+  width: 40px;
+  height: 40px;
+  border: 2px solid #404040;
+  background: #2c2c2c;
+  color: #fff;
+  font-size: 20px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.tool-btn:hover {
+  background: #383838;
+  border-color: #4CAF50;
+}
+
+.tool-btn.active {
+  background: #4CAF50;
+  border-color: #4CAF50;
+  box-shadow: 0 0 10px rgba(76, 175, 80, 0.4);
+}
+
+.color-picker-label,
+.line-width-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #fff;
+  font-size: 14px;
+}
+
+#color-picker {
+  width: 50px;
+  height: 40px;
+  border: 2px solid #404040;
+  border-radius: 6px;
+  cursor: pointer;
+  background: none;
+}
+
+#line-width {
+  width: 100px;
+}
+
+#line-width-value {
+  min-width: 20px;
+  text-align: center;
+  font-weight: bold;
+  color: #4CAF50;
+}
+
+.btn-undo,
+.btn-clear {
+  width: 40px;
+  height: 40px;
+  border: 2px solid #404040;
+  background: #2c2c2c;
+  color: #fff;
+  font-size: 20px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-undo:hover {
+  background: #007BFF;
+  border-color: #007BFF;
+}
+
+.btn-clear:hover {
+  background: #f44336;
+  border-color: #f44336;
+}
+
+.photo-editor-canvas-container {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: #1a1a1a;
+  padding: 20px;
+  overflow: auto;
+  position: relative;
+}
+
+#photo-editor-canvas {
+  max-width: 100%;
+  max-height: 100%;
+  border: 2px solid #404040;
+  border-radius: 8px;
+  cursor: crosshair;
+  background: white;
+}
+
+.text-input-overlay {
+  position: fixed;
+  background: rgba(0, 0, 0, 0.8);
+  color: white;
+  border: 2px solid #4CAF50;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-family: Arial, sans-serif;
+  font-weight: bold;
+  outline: none;
+  z-index: 30000;
+}
+
+.photo-editor-actions {
+  display: flex;
+  gap: 12px;
+  padding: 16px 20px;
+  background: #1e1e1e;
+  border-top: 2px solid #404040;
+}
+
+.btn-cancel-editor,
+.btn-save-editor {
+  flex: 1;
+  padding: 12px 24px;
+  font-size: 16px;
+  font-weight: 600;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-cancel-editor {
+  background: #666;
+  color: white;
+}
+
+.btn-cancel-editor:hover {
+  background: #555;
+  transform: scale(1.02);
+}
+
+.btn-save-editor {
+  background: #4CAF50;
+  color: white;
+}
+
+.btn-save-editor:hover {
+  background: #45a049;
+  transform: scale(1.02);
+}
+
+@media (max-width: 768px) {
+  .photo-editor-toolbar {
+    gap: 8px;
+    padding: 8px 12px;
+  }
+  
+  .toolbar-section {
+    gap: 4px;
+  }
+  
+  .tool-btn,
+  .btn-undo,
+  .btn-clear {
+    width: 35px;
+    height: 35px;
+    font-size: 16px;
+  }
+  
+  #color-picker {
+    width: 40px;
+    height: 35px;
+  }
+  
+  #line-width {
+    width: 80px;
+  }
+}
+
 .hours-table .total-row {
   background: var(--surface);
   font-weight: bold;

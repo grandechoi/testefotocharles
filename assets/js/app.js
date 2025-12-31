@@ -7,12 +7,14 @@ import { formsManager } from './forms.js';
 import { cameraManager } from './camera.js';
 import { reportsManager } from './reports.js';
 import { db } from './database.js';
+import { photoEditor } from './photo-editor.js';
 
 // Expose to window for console debugging
 window.db = db;
 window.formsManager = formsManager;
 window.cameraManager = cameraManager;
 window.reportsManager = reportsManager;
+window.photoEditor = photoEditor;
 
 class App {
     constructor() {
@@ -989,7 +991,8 @@ class App {
                 <button class="btn-close-view">✕</button>
                 <img src="${photo.dataUrl}" alt="Foto">
                 <div class="photo-view-actions">
-                    <button class="btn-delete-photo">🗑️ Eliminar Foto</button>
+                    <button class="btn-edit-photo">✏️ Editar</button>
+                    <button class="btn-delete-photo">🗑️ Eliminar</button>
                 </div>
             </div>
         `;
@@ -997,6 +1000,15 @@ class App {
         document.body.appendChild(modal);
         
         modal.querySelector('.btn-close-view').onclick = () => document.body.removeChild(modal);
+        
+        modal.querySelector('.btn-edit-photo').onclick = async () => {
+            document.body.removeChild(modal);
+            await photoEditor.openEditor(photo.dataUrl, (editedDataUrl) => {
+                accion.photos[campo][photoIndex] = { dataUrl: editedDataUrl, timestamp: Date.now() };
+                this.renderAccionPhotos(accionId, campo);
+            });
+        };
+        
         modal.querySelector('.btn-delete-photo').onclick = () => {
             if (confirm('¿Eliminar esta foto?')) {
                 accion.photos[campo].splice(photoIndex, 1);
@@ -1053,7 +1065,8 @@ class App {
                 <button class="btn-close-view">✕</button>
                 <img src="${photo.dataUrl}" alt="Foto">
                 <div class="photo-view-actions">
-                    <button class="btn-delete-photo">🗑️ Eliminar Foto</button>
+                    <button class="btn-edit-photo">✏️ Editar</button>
+                    <button class="btn-delete-photo">🗑️ Eliminar</button>
                 </div>
             </div>
         `;
@@ -1061,6 +1074,15 @@ class App {
         document.body.appendChild(modal);
         
         modal.querySelector('.btn-close-view').onclick = () => document.body.removeChild(modal);
+        
+        modal.querySelector('.btn-edit-photo').onclick = async () => {
+            document.body.removeChild(modal);
+            await photoEditor.openEditor(photo.dataUrl, (editedDataUrl) => {
+                this.generalPhotos[campo][photoIndex] = { dataUrl: editedDataUrl, timestamp: Date.now() };
+                this.renderGeneralPhotos(campo);
+            });
+        };
+        
         modal.querySelector('.btn-delete-photo').onclick = () => {
             if (confirm('¿Eliminar esta foto?')) {
                 this.generalPhotos[campo].splice(photoIndex, 1);
