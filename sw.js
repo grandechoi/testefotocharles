@@ -1,4 +1,4 @@
-const CACHE_NAME = "reportmanager-v7";
+const CACHE_NAME = "reportmanager-v8";
 const ASSETS = [
   "./",
   "./index.html",

@@ -102,6 +102,18 @@ class App {
             loadDraftBtn.addEventListener('click', () => this.showDraftModal());
         }
 
+        // Export draft button
+        const exportDraftBtn = document.getElementById('export-draft');
+        if (exportDraftBtn) {
+            exportDraftBtn.addEventListener('click', () => this.exportDraft());
+        }
+
+        // Import draft button
+        const importDraftBtn = document.getElementById('import-draft');
+        if (importDraftBtn) {
+            importDraftBtn.addEventListener('click', () => this.importDraft());
+        }
+
         // Check storage button
         const checkStorageBtn = document.getElementById('check-storage');
         if (checkStorageBtn) {
@@ -386,6 +398,108 @@ class App {
         } catch (error) {
             console.error('Error deleting draft:', error);
             alert('Error al eliminar borrador');
+        }
+    }
+
+    async exportDraft() {
+        try {
+            const data = await formsManager.getReportData();
+            
+            // Add acciones correctivas and general photos
+            data.accionesCorrectivas = this.accionesCorrectivas || [];
+            data.generalPhotos = this.generalPhotos || {};
+            
+            // Add metadata
+            data._metadata = {
+                version: '1.0',
+                exportDate: new Date().toISOString(),
+                app: 'ReportManager'
+            };
+            
+            // Convert to JSON
+            const dataStr = JSON.stringify(data, null, 2);
+            const blob = new Blob([dataStr], { type: 'application/json' });
+            
+            // Create download link
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `borrador_${new Date().toISOString().split('T')[0]}_${Date.now()}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            
+            const sizeMB = (dataStr.length / 1024 / 1024).toFixed(2);
+            this.showStatus(`✅ Borrador exportado (${sizeMB} MB)`, 'success');
+        } catch (error) {
+            console.error('Error exporting draft:', error);
+            alert(`❌ Error al exportar:\n\n${error.message}`);
+        }
+    }
+
+    async importDraft() {
+        try {
+            // Create file input
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = '.json,application/json';
+            
+            input.onchange = async (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+                
+                try {
+                    const text = await file.text();
+                    const data = JSON.parse(text);
+                    
+                    // Validate data structure
+                    if (!data.generalData && !data.sections) {
+                        throw new Error('Archivo no válido. No contiene datos de borrador.');
+                    }
+                    
+                    // Confirm import
+                    const sizeMB = (text.length / 1024 / 1024).toFixed(2);
+                    if (!confirm(`¿Importar borrador?\n\nTamaño: ${sizeMB} MB\nFecha de exportación: ${data._metadata?.exportDate || 'desconocida'}\n\nEsto reemplazará los datos actuales.`)) {
+                        return;
+                    }
+                    
+                    // Load data
+                    formsManager.itemStates = data.sections || {};
+                    formsManager.sectionPhotos = data.sectionPhotos || {};
+                    formsManager.itemPhotos = data.itemPhotos || {};
+                    
+                    formsManager.populateGeneralData(data.generalData);
+                    formsManager.populateObservations(data.observations);
+                    formsManager.populateHoursData(data.hoursData);
+                    formsManager.populateSignaturesData(data.signatures);
+                    formsManager.updateAllDisplays();
+                    
+                    // Load acciones correctivas
+                    if (data.accionesCorrectivas) {
+                        this.accionesCorrectivas = data.accionesCorrectivas;
+                        this.renderAllAcciones();
+                    }
+                    
+                    // Load general photos
+                    if (data.generalPhotos) {
+                        this.generalPhotos = data.generalPhotos;
+                        ['recomendaciones', 'conclusion'].forEach(campo => {
+                            this.renderGeneralPhotos(campo);
+                        });
+                    }
+                    
+                    this.showStatus('✅ Borrador importado correctamente', 'success');
+                } catch (error) {
+                    console.error('Error parsing file:', error);
+                    alert(`❌ Error al importar archivo:\n\n${error.message}`);
+                }
+            };
+            
+            input.click();
+        } catch (error) {
+            console.error('Error importing draft:', error);
+            alert(`❌ Error al importar:\n\n${error.message}`);
         }
     }
 
