@@ -58,15 +58,7 @@ class FormsManager {
         // Event listeners
         const sectionHeader = card.querySelector('.section-header');
         sectionHeader.addEventListener('click', (e) => {
-            // Não colapsar se clicar no botão de foto
-            if (e.target.closest('.btn-add-section-photo')) return;
             this.toggleSection(card);
-        });
-
-        const btnSectionPhoto = card.querySelector('.btn-add-section-photo');
-        btnSectionPhoto.addEventListener('click', (e) => {
-            e.stopPropagation();
-            this.openPhotoSelector(secao, null, null);
         });
 
         // Items event listeners
