@@ -180,6 +180,26 @@ class ReportsManager {
                         `EQUIPO ${equip.number}`
                     );
                 }
+                
+                // **NOVO**: Recomendaciones deste equipamento
+                if (equip.recomendaciones) {
+                    await this.addRecomendaciones(
+                        documentChildren, 
+                        equip.recomendaciones, 
+                        equip.generalPhotos?.recomendaciones,
+                        `EQUIPO ${equip.number}`
+                    );
+                }
+                
+                // **NOVO**: Conclusión deste equipamento
+                if (equip.conclusion) {
+                    await this.addConclusion(
+                        documentChildren, 
+                        equip.conclusion, 
+                        equip.generalPhotos?.conclusion,
+                        `EQUIPO ${equip.number}`
+                    );
+                }
             }
         } else {
             // Modo legado - equipamento único
@@ -188,6 +208,24 @@ class ReportsManager {
             // Acciones Correctivas (legado)
             if (observations && observations.accionesCorrectivas && observations.accionesCorrectivas.length > 0) {
                 await this.addAccionesCorrectivas(documentChildren, observations.accionesCorrectivas);
+            }
+            
+            // Recomendaciones (legado)
+            if (observations && observations.recomendaciones) {
+                await this.addRecomendaciones(
+                    documentChildren, 
+                    observations.recomendaciones, 
+                    observations.generalPhotos?.recomendaciones
+                );
+            }
+            
+            // Conclusión (legado)
+            if (observations && observations.conclusion) {
+                await this.addConclusion(
+                    documentChildren, 
+                    observations.conclusion, 
+                    observations.generalPhotos?.conclusion
+                );
             }
         }
 
@@ -295,59 +333,10 @@ class ReportsManager {
         }
         */ // FIM DO CÓDIGO LEGADO
 
-        // ===== RECOMENDACIONES =====
-        if (observations && observations.recomendaciones) {
-            documentChildren.push(
-                new Paragraph({
-                    children: [new TextRun({
-                        text: "Recomendaciones",
-                        bold: true,
-                        size: 26
-                    })],
-                    heading: HeadingLevel.HEADING_1,
-                    spacing: { before: 400, after: 200 }
-                })
-            );
-
-            documentChildren.push(
-                new Paragraph({
-                    children: [new TextRun(observations.recomendaciones)],
-                    spacing: { after: 200 }
-                })
-            );
-
-            // Fotos Recomendaciones
-            if (observations.generalPhotos && observations.generalPhotos.recomendaciones) {
-                await this.addPhotosToDocument(documentChildren, observations.generalPhotos.recomendaciones);
-            }
-        }
-
-        // ===== CONCLUSIÓN =====
-        if (observations && observations.conclusion) {
-            documentChildren.push(
-                new Paragraph({
-                    children: [new TextRun({
-                        text: "Conclusión",
-                        bold: true,
-                        size: 26
-                    })],
-                    heading: HeadingLevel.HEADING_1,
-                    spacing: { before: 400, after: 200 }
-                })
-            );
-
-            documentChildren.push(
-                new Paragraph({
-                    children: [new TextRun(observations.conclusion)],
-                    spacing: { after: 200 }
-                })
-            );
-
-            // Fotos Conclusión
-            if (observations.generalPhotos && observations.generalPhotos.conclusion) {
-                await this.addPhotosToDocument(documentChildren, observations.generalPhotos.conclusion);
-            }
-        }
+        /* ===== RECOMENDACIONES E CONCLUSIÓN REMOVIDAS DAQUI =====
+         * Agora são adicionadas individualmente para cada equipamento
+         * dentro do loop de equipments acima, ou no modo legado
+         */
 
         // ===== TABELA DE REPUESTOS NECESARIOS =====
         await this.addRepuestosTable(documentChildren, sections);
@@ -1356,6 +1345,78 @@ class ReportsManager {
                     await this.addPhotosToDocument(documentChildren, accion.photos.resultado);
                 }
             }
+        }
+    }
+
+    /**
+     * Adiciona seção de Recomendaciones ao documento
+     * @param {string} equipmentLabel - Label opcional para identificar o equipamento
+     */
+    async addRecomendaciones(documentChildren, recomendaciones, photos = null, equipmentLabel = null) {
+        const { Paragraph, TextRun, HeadingLevel } = this.docx;
+
+        const title = equipmentLabel 
+            ? `Recomendaciones - ${equipmentLabel}` 
+            : "Recomendaciones";
+
+        documentChildren.push(
+            new Paragraph({
+                children: [new TextRun({
+                    text: title,
+                    bold: true,
+                    size: 26
+                })],
+                heading: HeadingLevel.HEADING_1,
+                spacing: { before: 400, after: 200 }
+            })
+        );
+
+        documentChildren.push(
+            new Paragraph({
+                children: [new TextRun(recomendaciones)],
+                spacing: { after: 200 }
+            })
+        );
+
+        // Fotos Recomendaciones
+        if (photos) {
+            await this.addPhotosToDocument(documentChildren, photos);
+        }
+    }
+
+    /**
+     * Adiciona seção de Conclusión ao documento
+     * @param {string} equipmentLabel - Label opcional para identificar o equipamento
+     */
+    async addConclusion(documentChildren, conclusion, photos = null, equipmentLabel = null) {
+        const { Paragraph, TextRun, HeadingLevel } = this.docx;
+
+        const title = equipmentLabel 
+            ? `Conclusión - ${equipmentLabel}` 
+            : "Conclusión";
+
+        documentChildren.push(
+            new Paragraph({
+                children: [new TextRun({
+                    text: title,
+                    bold: true,
+                    size: 26
+                })],
+                heading: HeadingLevel.HEADING_1,
+                spacing: { before: 400, after: 200 }
+            })
+        );
+
+        documentChildren.push(
+            new Paragraph({
+                children: [new TextRun(conclusion)],
+                spacing: { after: 200 }
+            })
+        );
+
+        // Fotos Conclusión
+        if (photos) {
+            await this.addPhotosToDocument(documentChildren, photos);
         }
     }
 }
