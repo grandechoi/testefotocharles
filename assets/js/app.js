@@ -131,6 +131,13 @@ class App {
         try {
             const data = await formsManager.getReportData();
             
+            // Count photos for debugging
+            let photoCount = 0;
+            Object.values(data.itemPhotos || {}).forEach(photos => {
+                if (Array.isArray(photos)) photoCount += photos.length;
+            });
+            console.log(`📷 Total photos: ${photoCount}`);
+            
             const draftName = prompt('Nombre del borrador:', 
                 `Borrador_${new Date().toLocaleDateString('es-ES')}`);
             
@@ -146,8 +153,30 @@ class App {
             
             console.log(`📦 Borrador size: ${sizeKB} KB (${sizeMB} MB)`);
             
+            // Check available quota
+            if ('storage' in navigator && 'estimate' in navigator.storage) {
+                const estimate = await navigator.storage.estimate();
+                const usagePercent = ((estimate.usage / estimate.quota) * 100).toFixed(2);
+                console.log(`💾 Storage: ${usagePercent}% usado (${(estimate.usage / 1024 / 1024).toFixed(2)} MB de ${(estimate.quota / 1024 / 1024).toFixed(2)} MB)`);
+                
+                // Warn if storage is almost full
+                if (estimate.usage / estimate.quota > 0.9) {
+                    if (!confirm(`⚠️ Espacio casi lleno (${usagePercent}%).\n\nElimine borradores antiguos antes de continuar.\n\n¿Continuar de todos modos?`)) {
+                        return;
+                    }
+                }
+            }
+            
             // Use IndexedDB for drafts (supports much larger sizes)
             try {
+                // Delete old draft with same name first
+                const existingDrafts = await db.getAll('drafts');
+                const existing = existingDrafts.find(d => d.name === safeName);
+                if (existing) {
+                    await db.delete('drafts', safeName);
+                    console.log(`🗑️ Borrador anterior eliminado: ${safeName}`);
+                }
+                
                 await db.put('drafts', {
                     name: safeName,
                     data: data,
@@ -156,21 +185,16 @@ class App {
                 });
                 
                 const displaySize = sizeMB >= 1 ? `${sizeMB} MB` : `${sizeKB} KB`;
-                this.showStatus(`✅ Borrador "${safeName}" guardado (${displaySize})`, 'success');
+                this.showStatus(`✅ Borrador "${safeName}" guardado (${displaySize}, ${photoCount} fotos)`, 'success');
             } catch (dbError) {
                 console.error('IndexedDB error:', dbError);
-                // Fallback to localStorage for small drafts
-                if (dataStr.length < 4 * 1024 * 1024) { // < 4MB
-                    try {
-                        localStorage.setItem(`draft_${safeName}`, dataStr);
-                        const displaySize = sizeMB >= 1 ? `${sizeMB} MB` : `${sizeKB} KB`;
-                        this.showStatus(`✅ Borrador "${safeName}" guardado (${displaySize})`, 'success');
-                    } catch (storageError) {
-                        throw new Error('Espacio insuficiente en el navegador. Elimine borradores antiguos o reduzca fotos.');
-                    }
-                } else {
-                    throw new Error('Error al guardar en base de datos. Intente reducir el número de fotos.');
+                
+                // Check if it's a quota error
+                if (dbError.name === 'QuotaExceededError' || dbError.message.includes('quota')) {
+                    throw new Error(`Espacio insuficiente en el navegador.\n\nTamaño del borrador: ${sizeMB} MB\nFotos: ${photoCount}\n\nElimine borradores antiguos o reduzca el número de fotos.`);
                 }
+                
+                throw new Error(`Error en base de datos: ${dbError.message}`);
             }
         } catch (error) {
             console.error('Error saving draft:', error);
