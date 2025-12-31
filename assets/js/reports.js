@@ -82,11 +82,11 @@ class ReportsManager {
             })
         );
 
-        // General Data Section
+        // General Data Section - APENAS Perfiles, Peticiones, Descripción
         documentChildren.push(
             new Paragraph({
                 children: [new TextRun({
-                    text: "Datos Generales",
+                    text: "Información de la Visita",
                     bold: true,
                     size: 28
                 })],
@@ -95,34 +95,53 @@ class ReportsManager {
             })
         );
 
-        // General data fields
-        const generalFields = [
-            { label: "Año", value: generalData.año },
-            { label: "Semana", value: generalData.semana },
-            { label: "Cliente", value: generalData.cliente },
-            { label: "Albarán", value: generalData.albaran },
-            { label: "Código Ingeniero", value: generalData.codIngeniero },
-            { label: "Ubicación del escáner", value: generalData.ubicacion },
-            { label: "Perfiles en el aire", value: generalData.perfiles },
-            { label: "Peticiones del cliente", value: generalData.peticiones }
-        ];
+        // Perfiles en el aire
+        if (generalData.perfiles) {
+            documentChildren.push(
+                new Paragraph({
+                    children: [
+                        new TextRun({
+                            text: "Perfiles en el aire: ",
+                            bold: true
+                        }),
+                        new TextRun(generalData.perfiles)
+                    ],
+                    spacing: { after: 200 }
+                })
+            );
+        }
 
-        generalFields.forEach(field => {
-            if (field.value) {
-                documentChildren.push(
-                    new Paragraph({
-                        children: [
-                            new TextRun({
-                                text: `${field.label}: `,
-                                bold: true
-                            }),
-                            new TextRun(field.value)
-                        ],
-                        spacing: { after: 100 }
-                    })
-                );
-            }
-        });
+        // Peticiones del cliente
+        if (generalData.peticiones) {
+            documentChildren.push(
+                new Paragraph({
+                    children: [
+                        new TextRun({
+                            text: "Peticiones del cliente: ",
+                            bold: true
+                        }),
+                        new TextRun(generalData.peticiones)
+                    ],
+                    spacing: { after: 200 }
+                })
+            );
+        }
+
+        // Descripción de la visita
+        if (observations && observations.descripcion) {
+            documentChildren.push(
+                new Paragraph({
+                    children: [
+                        new TextRun({
+                            text: "Descripción de la visita: ",
+                            bold: true
+                        }),
+                        new TextRun(observations.descripcion)
+                    ],
+                    spacing: { after: 300 }
+                })
+            );
+        }
 
         // Sections with items
         for (const [secao, itens] of Object.entries(sections)) {
@@ -190,24 +209,21 @@ class ReportsManager {
                     })
                 );
 
-                // Item photos (up to 2)
+                // Item photos (LADO A LADO - up to 2)
                 const photoKeys = [`${secao}|${item}|1`, `${secao}|${item}|2`];
+                const photos = [];
+                
                 for (const photoKey of photoKeys) {
                     if (itemPhotos[photoKey] && itemPhotos[photoKey].dataUrl) {
                         try {
                             const imageData = await this.dataUrlToArrayBuffer(itemPhotos[photoKey].dataUrl);
-                            documentChildren.push(
-                                new Paragraph({
-                                    children: [
-                                        new ImageRun({
-                                            data: imageData,
-                                            transformation: {
-                                                width: 300,
-                                                height: 225
-                                            }
-                                        })
-                                    ],
-                                    spacing: { after: 100 }
+                            photos.push(
+                                new ImageRun({
+                                    data: imageData,
+                                    transformation: {
+                                        width: 250,
+                                        height: 188
+                                    }
                                 })
                             );
                         } catch (error) {
@@ -215,11 +231,21 @@ class ReportsManager {
                         }
                     }
                 }
+
+                // Se tem fotos, adicionar em um único parágrafo (lado a lado)
+                if (photos.length > 0) {
+                    documentChildren.push(
+                        new Paragraph({
+                            children: photos,
+                            spacing: { after: 200 }
+                        })
+                    );
+                }
             }
         }
 
         // Observations
-        if (observations) {
+        if (observations && observations.observaciones) {
             documentChildren.push(
                 new Paragraph({
                     children: [new TextRun({
@@ -234,7 +260,7 @@ class ReportsManager {
 
             documentChildren.push(
                 new Paragraph({
-                    children: [new TextRun(observations)],
+                    children: [new TextRun(observations.observaciones)],
                     spacing: { after: 200 }
                 })
             );
@@ -455,24 +481,32 @@ class ReportsManager {
             })
         );
 
-        const today = new Date().toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' });
-        const cliente = generalData?.cliente || 'SW_NAVARRA';
+        // Usar fecha-visita ou data atual
+        let visitDate;
+        if (generalData?.fechaVisita) {
+            visitDate = new Date(generalData.fechaVisita + 'T00:00:00');
+        } else {
+            visitDate = new Date();
+        }
+        const fechaFormateada = visitDate.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' });
+        
+        const empresa = generalData?.empresa || 'SW_NAVARRA';
 
         // Estrutura EXATA conforme imagem (15 linhas de dados)
         const maintenanceData = [
-            { resp: cliente, pieza: "Sensores", funcion: "Limpieza", period: "Semanal", escaner: today },
-            { resp: cliente, pieza: "Nivel de Agua", funcion: "Comprobar estado y rellenar agua si fuera necesario", period: "Semanal", escaner: today },
-            { resp: cliente, pieza: "Portacables", funcion: "Inspección visual", period: "Mensual", escaner: today },
-            { resp: "VALMET", pieza: "Portacables", funcion: "Inspección de la estanquidad de las tuercas de aire, cables eléctricos y mangueras de agua", period: "Trimestral", escaner: today },
-            { resp: cliente, pieza: "Bombilla de Humedad", funcion: "Sustitución de bombilla en sensor de humedad", period: "Anual", escaner: "" },
+            { resp: empresa, pieza: "Sensores", funcion: "Limpieza", period: "Semanal", escaner: fechaFormateada },
+            { resp: empresa, pieza: "Nivel de Agua", funcion: "Comprobar estado y rellenar agua si fuera necesario", period: "Semanal", escaner: fechaFormateada },
+            { resp: empresa, pieza: "Portacables", funcion: "Inspección visual", period: "Mensual", escaner: fechaFormateada },
+            { resp: "VALMET", pieza: "Portacables", funcion: "Inspección de la estanquidad de las tuercas de aire, cables eléctricos y mangueras de agua", period: "Trimestral", escaner: fechaFormateada },
+            { resp: empresa, pieza: "Bombilla de Humedad", funcion: "Sustitución de bombilla en sensor de humedad", period: "Anual", escaner: "" },
             { resp: "VALMET", pieza: "Líquido de refrigeración", funcion: "Sustitución de líquido Refrigerante (Propilenglicol 30% agua destilada 70%)", period: "Anual", escaner: "" },
-            { resp: "VALMET", pieza: "Filtro de lodo del sistema de agua", funcion: "Limpieza de los filtros", period: "Trimestral", escaner: today },
-            { resp: "VALMET", pieza: "Filtro de aire", funcion: "Comprobar estado y sustituir el filtro de aire", period: "Anual", escaner: today },
+            { resp: "VALMET", pieza: "Filtro de lodo del sistema de agua", funcion: "Limpieza de los filtros", period: "Trimestral", escaner: fechaFormateada },
+            { resp: "VALMET", pieza: "Filtro de aire", funcion: "Comprobar estado y sustituir el filtro de aire", period: "Anual", escaner: fechaFormateada },
             { resp: "VALMET", pieza: "Plástico poroso del indicador de humedad", funcion: "Sustituir por uno nuevo el plástico poroso del interior del indicador de humedad del sistema neumático", period: "Semestral", escaner: "" },
-            { resp: "VALMET", pieza: "Bastidor de medición", funcion: "Limpie el bastidor debajo de las estructuras mediante vacío o soplador", period: "Trimestral", escaner: today },
-            { resp: "VALMET", pieza: "Rail wipers", funcion: "Sustituya las escobillas del rail", period: "Trimestral", escaner: today },
-            { resp: "VALMET", pieza: "Rodamientos del Carro", funcion: "Revisión y Engrasado", period: "Trimestral", escaner: today },
-            { resp: "VALMET", pieza: "Rodamientos del Accionamiento", funcion: "Revisión y Engrasado", period: "Semestral", escaner: today },
+            { resp: "VALMET", pieza: "Bastidor de medición", funcion: "Limpie el bastidor debajo de las estructuras mediante vacío o soplador", period: "Trimestral", escaner: fechaFormateada },
+            { resp: "VALMET", pieza: "Rail wipers", funcion: "Sustituya las escobillas del rail", period: "Trimestral", escaner: fechaFormateada },
+            { resp: "VALMET", pieza: "Rodamientos del Carro", funcion: "Revisión y Engrasado", period: "Trimestral", escaner: fechaFormateada },
+            { resp: "VALMET", pieza: "Rodamientos del Accionamiento", funcion: "Revisión y Engrasado", period: "Semestral", escaner: fechaFormateada },
             { resp: "VALMET", pieza: "Certificado de fuentes radioactivas", funcion: "Emitido según normativa vigente", period: "Anual", escaner: "" },
             { resp: "VALMET", pieza: "Certificado de Calibración", funcion: "Realizado Conforme especificaciones Valmet", period: "Anual", escaner: "" }
         ];
@@ -916,8 +950,14 @@ class ReportsManager {
             })
         ];
 
-        // Data row com assinaturas
-        const today = new Date().toLocaleDateString('es-ES');
+        // Data row com assinaturas - usar fecha-visita
+        let visitDate;
+        if (generalData?.fechaVisita) {
+            visitDate = new Date(generalData.fechaVisita + 'T00:00:00');
+        } else {
+            visitDate = new Date();
+        }
+        const fechaFirma = visitDate.toLocaleDateString('es-ES');
         
         // Células para assinaturas
         const clienteSignatureChildren = [];
@@ -978,7 +1018,7 @@ class ReportsManager {
                 children: [
                     new TableCell({ 
                         children: [new Paragraph({ 
-                            children: [new TextRun(today)], 
+                            children: [new TextRun(fechaFirma)], 
                             alignment: AlignmentType.CENTER,
                             spacing: { before: 200, after: 200 }
                         })]
