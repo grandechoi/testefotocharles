@@ -792,7 +792,7 @@ class FormsManager {
             if (window.app.accionesCorrectivas) {
                 window.app.accionesCorrectivas = [];
             }
-            const container = document.getElementById('acciones-list');
+            const container = document.getElementById('acciones-correctivas-container');
             if (container) container.innerHTML = '';
             
             // Limpar fotos gerais (recomendaciones, conclusion)
