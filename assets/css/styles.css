@@ -802,6 +802,243 @@ textarea {
   background: #d32f2f;
   transform: scale(1.05);
 }
+
+/* ============================================
+   PHOTO SELECTOR MODAL (Drag & Drop + File + Camera)
+   ============================================ */
+
+.photo-selector-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.85);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 15000;
+}
+
+.photo-selector-content {
+  background: #2c2c2c;
+  border-radius: 12px;
+  width: 90%;
+  max-width: 600px;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.photo-selector-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 24px;
+  border-bottom: 1px solid #404040;
+}
+
+.photo-selector-header h3 {
+  margin: 0;
+  color: #4CAF50;
+  font-size: 20px;
+}
+
+.btn-close-photo-modal {
+  background: none;
+  border: none;
+  color: #999;
+  font-size: 28px;
+  cursor: pointer;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: all 0.2s;
+}
+
+.btn-close-photo-modal:hover {
+  background: #404040;
+  color: #fff;
+}
+
+.photo-selector-body {
+  padding: 24px;
+}
+
+.photo-preview-area {
+  border: 3px dashed #4CAF50;
+  border-radius: 12px;
+  padding: 40px 20px;
+  text-align: center;
+  min-height: 250px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: rgba(76, 175, 80, 0.05);
+  transition: all 0.3s;
+  margin-bottom: 20px;
+}
+
+.photo-preview-area.drag-over {
+  background: rgba(76, 175, 80, 0.15);
+  border-color: #66BB6A;
+  transform: scale(1.02);
+}
+
+.photo-preview-area p {
+  color: #aaa;
+  margin: 0;
+  font-size: 1rem;
+}
+
+.photo-preview-area img {
+  max-width: 100%;
+  max-height: 300px;
+  border-radius: 8px;
+}
+
+.photo-actions {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.btn-photo-action {
+  flex: 1;
+  padding: 12px 20px;
+  background: #404040;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 1rem;
+  font-weight: 500;
+  transition: all 0.2s;
+  text-align: center;
+}
+
+.btn-photo-action:hover {
+  background: #4a4a4a;
+  transform: translateY(-2px);
+}
+
+.btn-file-input {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-confirm-photo {
+  width: 100%;
+  padding: 14px;
+  background: #4CAF50;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-confirm-photo:hover {
+  background: #45a049;
+  transform: scale(1.02);
+}
+
+/* ============================================
+   PHOTO VIEW MODAL (View + Delete + Replace)
+   ============================================ */
+
+.photo-view-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.95);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 16000;
+}
+
+.photo-view-content {
+  position: relative;
+  max-width: 90%;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+}
+
+.photo-view-content img {
+  max-width: 100%;
+  max-height: 70vh;
+  border-radius: 12px;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+}
+
+.btn-close-view {
+  position: absolute;
+  top: -50px;
+  right: 0;
+  background: rgba(255, 255, 255, 0.2);
+  border: none;
+  color: white;
+  font-size: 32px;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.btn-close-view:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: scale(1.1);
+}
+
+.photo-view-actions {
+  display: flex;
+  gap: 12px;
+}
+
+.btn-delete-photo,
+.btn-replace-photo {
+  padding: 12px 24px;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-delete-photo {
+  background: #f44336;
+  color: white;
+}
+
+.btn-delete-photo:hover {
+  background: #d32f2f;
+}
+
+.btn-replace-photo {
+  background: #2196F3;
+  color: white;
+}
+
+.btn-replace-photo:hover {
+  background: #1976D2;
+}
 }
 
 .draft-item:hover {

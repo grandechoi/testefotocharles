@@ -63,7 +63,7 @@ class FormsManager {
 
         // Event listeners
         const btnSectionPhoto = card.querySelector('.btn-add-section-photo');
-        btnSectionPhoto.addEventListener('click', () => this.addSectionPhoto(secao));
+        btnSectionPhoto.addEventListener('click', () => this.openPhotoSelector(secao, null, null));
 
         // Items event listeners
         itens.forEach((item, itemIndex) => {
@@ -76,8 +76,8 @@ class FormsManager {
             // Photo buttons
             const btnPhoto1 = itemElement.querySelector('.btn-item-photo-1');
             const btnPhoto2 = itemElement.querySelector('.btn-item-photo-2');
-            btnPhoto1.addEventListener('click', () => this.addItemPhoto(secao, item, 1));
-            btnPhoto2.addEventListener('click', () => this.addItemPhoto(secao, item, 2));
+            btnPhoto1.addEventListener('click', () => this.openPhotoSelector(secao, item, 1));
+            btnPhoto2.addEventListener('click', () => this.openPhotoSelector(secao, item, 2));
         });
 
         return card;
@@ -169,7 +169,257 @@ class FormsManager {
     }
 
     /**
-     * Adiciona foto da seção
+     * Opens photo selector modal (camera + file + drag & drop)
+     */
+    openPhotoSelector(secao, item, photoNumber) {
+        const modal = document.createElement('div');
+        modal.className = 'photo-selector-modal';
+        modal.innerHTML = `
+            <div class="photo-selector-content">
+                <div class="photo-selector-header">
+                    <h3>📷 Seleccionar Foto</h3>
+                    <button class="btn-close-photo-modal">✕</button>
+                </div>
+                <div class="photo-selector-body">
+                    <div class="photo-preview-area" id="photo-preview-area">
+                        <p>Arrastra una imagen aquí o selecciona una opción abajo</p>
+                    </div>
+                    <div class="photo-actions">
+                        <label class="btn-photo-action btn-file-input">
+                            📁 Buscar Archivo
+                            <input type="file" accept="image/*" style="display:none" id="file-input-photo">
+                        </label>
+                        <button class="btn-photo-action btn-open-camera">
+                            📷 Abrir Cámara
+                        </button>
+                    </div>
+                    <button class="btn-confirm-photo" style="display:none">
+                        ✓ Confirmar Foto
+                    </button>
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(modal);
+
+        let selectedPhoto = null;
+
+        // Preview area
+        const previewArea = modal.querySelector('#photo-preview-area');
+        const btnConfirm = modal.querySelector('.btn-confirm-photo');
+        const fileInput = modal.querySelector('#file-input-photo');
+        const btnCamera = modal.querySelector('.btn-open-camera');
+        const btnClose = modal.querySelector('.btn-close-photo-modal');
+
+        // Drag & Drop
+        previewArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            previewArea.classList.add('drag-over');
+        });
+
+        previewArea.addEventListener('dragleave', () => {
+            previewArea.classList.remove('drag-over');
+        });
+
+        previewArea.addEventListener('drop', async (e) => {
+            e.preventDefault();
+            previewArea.classList.remove('drag-over');
+
+            const file = e.dataTransfer.files[0];
+            if (file && file.type.startsWith('image/')) {
+                await this.showPhotoPreview(file, previewArea, btnConfirm);
+                selectedPhoto = await this.fileToPhotoObject(file);
+            } else {
+                alert('Por favor, arrastra una imagen válida');
+            }
+        });
+
+        // File input
+        fileInput.addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                await this.showPhotoPreview(file, previewArea, btnConfirm);
+                selectedPhoto = await this.fileToPhotoObject(file);
+            }
+        });
+
+        // Camera button
+        btnCamera.addEventListener('click', async () => {
+            try {
+                const photo = await cameraManager.takePhoto();
+                await this.showPhotoPreview(null, previewArea, btnConfirm, photo.dataUrl);
+                selectedPhoto = photo;
+            } catch (error) {
+                if (error.message !== 'Captura cancelada') {
+                    alert('Error al abrir cámara: ' + error.message);
+                }
+            }
+        });
+
+        // Confirm button
+        btnConfirm.addEventListener('click', () => {
+            if (selectedPhoto) {
+                if (item) {
+                    // Item photo
+                    const key = `${secao}|${item}|${photoNumber}`;
+                    this.itemPhotos[key] = selectedPhoto;
+                    this.updateItemPhotoButton(secao, item, photoNumber);
+                } else {
+                    // Section photo
+                    this.sectionPhotos[secao] = selectedPhoto;
+                    this.updateSectionPhotoPreview(secao);
+                }
+                this.saveData();
+                document.body.removeChild(modal);
+            }
+        });
+
+        // Close button
+        btnClose.addEventListener('click', () => {
+            document.body.removeChild(modal);
+        });
+
+        // Close on overlay click
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                document.body.removeChild(modal);
+            }
+        });
+    }
+
+    /**
+     * Shows photo preview in modal
+     */
+    async showPhotoPreview(file, previewArea, btnConfirm, dataUrl = null) {
+        let imageUrl = dataUrl;
+        
+        if (file && !dataUrl) {
+            imageUrl = await this.fileToDataUrl(file);
+        }
+
+        previewArea.innerHTML = `
+            <img src="${imageUrl}" alt="Preview" style="max-width: 100%; max-height: 300px; border-radius: 8px;">
+            <p style="margin-top: 10px; font-size: 0.9rem; color: #4CAF50;">✓ Imagen cargada</p>
+        `;
+        btnConfirm.style.display = 'block';
+    }
+
+    /**
+     * Converts File to photo object
+     */
+    async fileToPhotoObject(file) {
+        const dataUrl = await this.fileToDataUrl(file);
+        return {
+            file,
+            dataUrl,
+            timestamp: Date.now()
+        };
+    }
+
+    /**
+     * Converts File to DataURL
+     */
+    fileToDataUrl(file) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = (e) => resolve(e.target.result);
+            reader.onerror = reject;
+            reader.readAsDataURL(file);
+        });
+    }
+
+    /**
+     * Updates section photo preview
+     */
+    updateSectionPhotoPreview(secao) {
+        const preview = this.sectionsContainer.querySelector(
+            `[data-section="${secao}"] .section-photo-preview`
+        );
+        
+        if (preview && this.sectionPhotos[secao]) {
+            preview.style.display = 'block';
+            preview.querySelector('img').src = this.sectionPhotos[secao].dataUrl;
+            
+            const btnRemove = preview.querySelector('.btn-remove-photo');
+            btnRemove.onclick = () => this.removeSectionPhoto(secao);
+        }
+    }
+
+    /**
+     * Updates item photo button
+     */
+    updateItemPhotoButton(secao, item, photoNumber) {
+        const itemIndex = TOPICOS_INSPECAO[secao].indexOf(item);
+        const itemElement = this.sectionsContainer.querySelector(
+            `[data-section="${secao}"] .item-row[data-item-index="${itemIndex}"]`
+        );
+
+        if (itemElement) {
+            const btn = itemElement.querySelector(`.btn-item-photo-${photoNumber}`);
+            if (btn) {
+                btn.classList.add('has-photo');
+                btn.textContent = `✓ ${photoNumber}`;
+                
+                // Add click to view
+                btn.onclick = (e) => {
+                    e.stopPropagation();
+                    this.viewPhoto(secao, item, photoNumber);
+                };
+            }
+        }
+    }
+
+    /**
+     * Views photo in modal
+     */
+    viewPhoto(secao, item, photoNumber) {
+        const key = `${secao}|${item}|${photoNumber}`;
+        const photo = this.itemPhotos[key];
+        
+        if (!photo) return;
+
+        const modal = document.createElement('div');
+        modal.className = 'photo-view-modal';
+        modal.innerHTML = `
+            <div class="photo-view-content">
+                <button class="btn-close-view">✕</button>
+                <img src="${photo.dataUrl}" alt="Foto">
+                <div class="photo-view-actions">
+                    <button class="btn-delete-photo">🗑️ Eliminar Foto</button>
+                    <button class="btn-replace-photo">🔄 Reemplazar Foto</button>
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(modal);
+
+        modal.querySelector('.btn-close-view').onclick = () => {
+            document.body.removeChild(modal);
+        };
+
+        modal.querySelector('.btn-delete-photo').onclick = () => {
+            if (confirm('¿Eliminar esta foto?')) {
+                delete this.itemPhotos[key];
+                this.updateItemPhotoButton(secao, item, photoNumber);
+                this.saveData();
+                document.body.removeChild(modal);
+            }
+        };
+
+        modal.querySelector('.btn-replace-photo').onclick = () => {
+            document.body.removeChild(modal);
+            this.openPhotoSelector(secao, item, photoNumber);
+        };
+
+        modal.onclick = (e) => {
+            if (e.target === modal) {
+                document.body.removeChild(modal);
+            }
+        };
+    }
+
+    /**
+     * Adiciona foto da seção (deprecated - usa openPhotoSelector)
      */
     async addSectionPhoto(secao) {
         try {

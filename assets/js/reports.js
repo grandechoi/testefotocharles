@@ -49,7 +49,7 @@ class ReportsManager {
      * Creates Word document structure
      */
     async createDocument(generalData, observations, sections, sectionPhotos, itemPhotos) {
-        const { Document, Paragraph, TextRun, Heading, AlignmentType } = this.docx;
+        const { Document, Paragraph, TextRun, HeadingLevel, AlignmentType, ImageRun } = this.docx;
 
         const documentChildren = [];
 
@@ -74,7 +74,7 @@ class ReportsManager {
                     bold: true,
                     size: 28
                 })],
-                heading: Heading.HEADING_1,
+                heading: HeadingLevel.HEADING_1,
                 spacing: { before: 200, after: 200 }
             })
         );
@@ -121,7 +121,7 @@ class ReportsManager {
                         bold: true,
                         size: 26
                     })],
-                    heading: Heading.HEADING_1,
+                    heading: HeadingLevel.HEADING_1,
                     spacing: { before: 400, after: 200 }
                 })
             );
@@ -133,7 +133,7 @@ class ReportsManager {
                     documentChildren.push(
                         new Paragraph({
                             children: [
-                                new this.docx.ImageRun({
+                                new ImageRun({
                                     data: imageData,
                                     transformation: {
                                         width: 400,
@@ -183,7 +183,7 @@ class ReportsManager {
                             documentChildren.push(
                                 new Paragraph({
                                     children: [
-                                        new this.docx.ImageRun({
+                                        new ImageRun({
                                             data: imageData,
                                             transformation: {
                                                 width: 300,
@@ -211,7 +211,7 @@ class ReportsManager {
                         bold: true,
                         size: 26
                     })],
-                    heading: Heading.HEADING_1,
+                    heading: HeadingLevel.HEADING_1,
                     spacing: { before: 400, after: 200 }
                 })
             );
