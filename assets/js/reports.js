@@ -925,7 +925,7 @@ class ReportsManager {
             new Paragraph({
                 children: [
                     new TextRun({ text: "DIRECCION: ", bold: true, size: 22 }),
-                    new TextRun({ text: generalData?.direccion || 'Av. Padre Raimundo de Lumbier, s/n, 31400, Sangüesa, Navarra.', size: 22, underline: { type: UnderlineType.SINGLE } })
+                    new TextRun({ text: generalData?.direccion || '', size: 22, underline: { type: UnderlineType.SINGLE } })
                 ],
                 spacing: { after: 200 }
             })

@@ -342,6 +342,13 @@ class App {
                 data = draft.data;
             }
 
+            // Clear current data first
+            formsManager.itemStates = {};
+            formsManager.sectionPhotos = {};
+            formsManager.itemPhotos = {};
+            this.accionesCorrectivas = [];
+            this.generalPhotos = {};
+
             // Load data into forms
             formsManager.itemStates = data.sections || {};
             formsManager.sectionPhotos = data.sectionPhotos || {};
@@ -354,9 +361,13 @@ class App {
             formsManager.updateAllDisplays();
 
             // Load acciones correctivas
-            if (data.accionesCorrectivas) {
+            if (data.accionesCorrectivas && Array.isArray(data.accionesCorrectivas)) {
                 this.accionesCorrectivas = data.accionesCorrectivas;
                 this.renderAllAcciones();
+            } else {
+                // Clear if no data
+                const container = document.getElementById('acciones-list');
+                if (container) container.innerHTML = '';
             }
 
             // Load general photos (recomendaciones, conclusion)
@@ -364,6 +375,12 @@ class App {
                 this.generalPhotos = data.generalPhotos;
                 ['recomendaciones', 'conclusion'].forEach(campo => {
                     this.renderGeneralPhotos(campo);
+                });
+            } else {
+                // Clear if no photos
+                ['recomendaciones', 'conclusion'].forEach(campo => {
+                    const photoContainer = document.getElementById(`${campo}-photos`);
+                    if (photoContainer) photoContainer.innerHTML = '';
                 });
             }
 
@@ -1075,7 +1092,7 @@ class App {
                             📷 Abrir Cámara
                         </button>
                     </div>
-                    <button class="btn-confirm-photo-app" style="display:none">
+                    <button class="btn-confirm-photo btn-confirm-photo-app" style="display:none">
                         ✓ Confirmar Foto
                     </button>
                 </div>

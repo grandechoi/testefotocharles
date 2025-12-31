@@ -389,7 +389,7 @@ class FormsManager {
                             📷 Abrir Cámara
                         </button>
                     </div>
-                    <button class="btn-confirm-photo-item" style="display:none">
+                    <button class="btn-confirm-photo btn-confirm-photo-item" style="display:none">
                         ✓ Confirmar Foto
                     </button>
                 </div>
@@ -773,18 +773,20 @@ class FormsManager {
         });
 
         // Limpar acciones correctivas
-        if (window.app && window.app.accionesCorrectivas) {
-            window.app.accionesCorrectivas = [];
+        if (window.app) {
+            if (window.app.accionesCorrectivas) {
+                window.app.accionesCorrectivas = [];
+            }
             const container = document.getElementById('acciones-list');
             if (container) container.innerHTML = '';
-        }
-
-        // Limpar fotos gerais (recomendaciones, conclusion)
-        if (window.app && window.app.generalPhotos) {
-            window.app.generalPhotos = {};
+            
+            // Limpar fotos gerais (recomendaciones, conclusion)
+            if (window.app.generalPhotos) {
+                window.app.generalPhotos = {};
+            }
             ['recomendaciones', 'conclusion'].forEach(campo => {
-                const container = document.getElementById(`${campo}-photos`);
-                if (container) container.innerHTML = '';
+                const photoContainer = document.getElementById(`${campo}-photos`);
+                if (photoContainer) photoContainer.innerHTML = '';
             });
         }
 
