@@ -238,14 +238,22 @@ class App {
                 item.innerHTML = `
                     <span>${draft.name}${sizeInfo}</span>
                     <div>
-                        <button class="btn btn-secondary" onclick="app.loadDraft('${draftId}', '${draft.source}')">
+                        <button class="btn btn-secondary btn-load-draft">
                             Cargar
                         </button>
-                        <button class="btn btn-danger" onclick="app.deleteDraft('${draftId}', '${draft.source}')">
+                        <button class="btn btn-danger btn-delete-draft">
                             Eliminar
                         </button>
                     </div>
                 `;
+                
+                // Add event listeners to avoid HTML injection issues
+                const loadBtn = item.querySelector('.btn-load-draft');
+                const deleteBtn = item.querySelector('.btn-delete-draft');
+                
+                loadBtn.onclick = () => this.loadDraft(draftId, draft.source);
+                deleteBtn.onclick = () => this.deleteDraft(draftId, draft.source);
+                
                 draftList.appendChild(item);
             });
 
