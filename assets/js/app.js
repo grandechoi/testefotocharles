@@ -351,6 +351,7 @@ class App {
             formsManager.itemPhotos = {};
             this.accionesCorrectivas = [];
             this.generalPhotos = {};
+            this.signatures = { ingeniero: null, cliente: null };
 
             // Load data into forms
             formsManager.itemStates = data.sections || {};

@@ -750,14 +750,24 @@ class FormsManager {
             if (element) element.value = '';
         });
         
-        // Limpar canvas de assinaturas
-        ['signature-ingeniero', 'signature-cliente'].forEach(canvasId => {
-            const canvas = document.getElementById(canvasId);
-            if (canvas) {
-                const ctx = canvas.getContext('2d');
-                ctx.clearRect(0, 0, canvas.width, canvas.height);
-            }
-        });
+        // Limpar assinaturas do app
+        if (window.app && window.app.signatures) {
+            window.app.signatures.ingeniero = null;
+            window.app.signatures.cliente = null;
+            
+            // Reset containers
+            ['ingeniero', 'cliente'].forEach(type => {
+                const container = document.getElementById(`signature-${type}-container`);
+                if (container) {
+                    container.classList.remove('has-signature');
+                    container.innerHTML = `
+                        <div class="signature-placeholder">
+                            ✍️ Toque aquí para firmar
+                        </div>
+                    `;
+                }
+            });
+        }
 
         // **NOVO**: Limpar tabela de horas
         document.querySelectorAll('.hours-input, .date-input, .comment-input').forEach(input => {
@@ -870,7 +880,7 @@ class FormsManager {
      * Coleta dados das assinaturas
      */
     collectSignaturesData() {
-        return {
+        const data = {
             ingeniero: {
                 nombre: document.getElementById('nombre-ingeniero')?.value || ''
             },
@@ -878,6 +888,14 @@ class FormsManager {
                 nombre: document.getElementById('nombre-cliente-firma')?.value || ''
             }
         };
+        
+        // Add signature images from app if available
+        if (window.app && window.app.signatures) {
+            data.ingeniero.signature = window.app.signatures.ingeniero || null;
+            data.cliente.signature = window.app.signatures.cliente || null;
+        }
+        
+        return data;
     }
 
     /**
@@ -896,8 +914,32 @@ class FormsManager {
             if (clienteInput) clienteInput.value = data.cliente.nombre;
         }
 
-        // Nota: Canvas de assinaturas não podem ser restaurados de PNG
-        // Apenas os nomes são salvos
+        // Restore signature images if available
+        if (window.app && window.app.signatures) {
+            if (data.ingeniero && data.ingeniero.signature) {
+                window.app.signatures.ingeniero = data.ingeniero.signature;
+                const container = document.getElementById('signature-ingeniero-container');
+                if (container) {
+                    container.classList.add('has-signature');
+                    container.innerHTML = `
+                        <img src="${data.ingeniero.signature}" class="signature-preview" alt="Firma">
+                        <button type="button" class="signature-remove-btn" onclick="app.removeSignature('ingeniero')">✕</button>
+                    `;
+                }
+            }
+            
+            if (data.cliente && data.cliente.signature) {
+                window.app.signatures.cliente = data.cliente.signature;
+                const container = document.getElementById('signature-cliente-container');
+                if (container) {
+                    container.classList.add('has-signature');
+                    container.innerHTML = `
+                        <img src="${data.cliente.signature}" class="signature-preview" alt="Firma">
+                        <button type="button" class="signature-remove-btn" onclick="app.removeSignature('cliente')">✕</button>
+                    `;
+                }
+            }
+        }
     }
 
     /**
