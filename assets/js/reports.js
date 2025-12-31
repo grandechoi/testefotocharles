@@ -56,6 +56,19 @@ class ReportsManager {
 
         const documentChildren = [];
 
+        // **TABELA DE HORAS NO INÍCIO (como estava)**
+        if (hoursData && hoursData.rows) {
+            await this.addHoursTablePage(documentChildren, hoursData, signatures, generalData);
+            
+            // Page break após horas
+            documentChildren.push(
+                new Paragraph({
+                    children: [],
+                    pageBreakBefore: true
+                })
+            );
+        }
+
         // Title
         documentChildren.push(
             new Paragraph({
@@ -372,18 +385,16 @@ class ReportsManager {
         // ===== TABELA DE REPUESTOS NECESARIOS =====
         await this.addRepuestosTable(documentChildren, sections);
 
-        // ===== TABELA DE MANTENIMIENTO (NO FINAL) =====
-        if (hoursData && hoursData.rows) {
-            // Page break antes da tabela
-            documentChildren.push(
-                new Paragraph({
-                    children: [],
-                    pageBreakBefore: true
-                })
-            );
-            
-            await this.addMantenimientoTable(documentChildren, sections, generalData, hoursData, signatures);
-        }
+        // ===== TABELA DE MANTENIMIENTO NO FINAL (sempre última página) =====
+        // Page break antes da tabela
+        documentChildren.push(
+            new Paragraph({
+                children: [],
+                pageBreakBefore: true
+            })
+        );
+        
+        await this.addMantenimientoTable(documentChildren, sections, generalData);
 
         return new Document({
             sections: [{
@@ -615,33 +626,8 @@ class ReportsManager {
      * Adiciona tabela de Mantenimiento (formato EXATO conforme imagem do usuário)
      * Com cores, dados e estrutura específica
      */
-    async addMantenimientoTable(documentChildren, sections, generalData, hoursData = null, signatures = null) {
+    async addMantenimientoTable(documentChildren, sections, generalData) {
         const { Paragraph, TextRun, Table, TableRow, TableCell, WidthType, AlignmentType, ShadingType } = this.docx;
-
-        // ===== ADICIONAR TABELA DE HORAS NO TOPO =====
-        if (hoursData && hoursData.rows) {
-            documentChildren.push(
-                new Paragraph({
-                    children: [new TextRun({
-                        text: "Horas Trabajadas",
-                        bold: true,
-                        size: 26
-                    })],
-                    heading: 1,
-                    spacing: { before: 200, after: 200 }
-                })
-            );
-
-            await this.addHoursTable(documentChildren, hoursData);
-
-            // Espaço após horas
-            documentChildren.push(
-                new Paragraph({
-                    children: [],
-                    spacing: { after: 400 }
-                })
-            );
-        }
 
         // ===== TABELA DE MANTENIMIENTO =====
         documentChildren.push(
@@ -652,7 +638,7 @@ class ReportsManager {
                     size: 26
                 })],
                 heading: 1,
-                spacing: { before: 400, after: 200 }
+                spacing: { before: 200, after: 200 }
             })
         );
 
@@ -780,17 +766,6 @@ class ReportsManager {
                 width: { size: 100, type: WidthType.PERCENTAGE }
             })
         );
-
-        // ===== ASSINATURAS NO FINAL =====
-        if (signatures) {
-            documentChildren.push(
-                new Paragraph({
-                    children: [],
-                    spacing: { before: 600 }
-                })
-            );
-            await this.addSignaturesSection(documentChildren, signatures);
-        }
     }
 
     /**
