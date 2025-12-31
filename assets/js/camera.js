@@ -9,6 +9,8 @@ class CameraManager {
     this.videoElement = null;
     this.canvasElement = null;
     this.photos = [];
+    this.flashEnabled = false;
+    this.track = null;
   }
 
   /**
@@ -185,6 +187,9 @@ class CameraManager {
           <div class="photo-capture-content">
             <video id="camera-preview-temp" autoplay playsinline></video>
             <canvas id="camera-canvas-temp" style="display:none;"></canvas>
+            <button class="btn-flash" id="btn-flash-temp" style="display:none;">
+              <span class="flash-icon">⚡</span>
+            </button>
             <div class="photo-capture-actions">
               <button class="btn-capture">📷 Capturar</button>
               <button class="btn-cancel">✕ Cancelar</button>
@@ -193,7 +198,10 @@ class CameraManager {
         `;
         document.body.appendChild(modal);
 
-        const video = modal.querySelector('#camera-preview-temp');
+        const video = modal.querySelector('#camera-preview-te
+        const btnFlash = modal.querySelector('#btn-flash-temp');
+        
+        let flashOn = false;mp');
         const canvas = modal.querySelector('#camera-canvas-temp');
         const btnCapture = modal.querySelector('.btn-capture');
         const btnCancel = modal.querySelector('.btn-cancel');
@@ -209,6 +217,30 @@ class CameraManager {
         });
 
         video.srcObject = stream;
+        
+        // Get video track for flash control
+        
+        // Show flash button if supported
+        if (hasFlash) {
+          btnFlash.style.display = 'block';
+          
+          // Flash button toggle
+          btnFlash.onclick = async () => {
+            flashOn = !flashOn;
+            try {
+              await track.applyConstraints({
+                advanced: [{ torch: flashOn }]
+              });
+              btnFlash.classList.toggle('flash-on', flashOn);
+              btnFlash.querySelector('.flash-icon').textContent = flashOn ? '⚡' : '⚡';
+            } catch (error) {
+              console.error('Flash error:', error);
+            }
+          };
+        }
+        const track = stream.getVideoTracks()[0];
+        const capabilities = track.getCapabilities();
+        const hasFlash = capabilities.torch;
 
         // Capture button
         btnCapture.onclick = () => {
