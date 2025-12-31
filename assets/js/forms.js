@@ -651,9 +651,11 @@ class FormsManager {
      * Coleta observações
      */
     collectObservations() {
-        const descripcion = document.getElementById('descripcion-visita')?.value || '';
-        const observaciones = document.getElementById('observaciones')?.value || '';
-        return { descripcion, observaciones };
+        return {
+            recomendaciones: document.getElementById('recomendaciones')?.value || '',
+            conclusion: document.getElementById('conclusion')?.value || '',
+            accionesCorrectivas: window.app?.accionesCorrectivas || []
+        };
     }
 
     /**
@@ -662,14 +664,22 @@ class FormsManager {
     populateObservations(data) {
         if (!data) return;
         
-        const descripcionEl = document.getElementById('descripcion-visita');
-        if (descripcionEl && data.descripcion) {
-            descripcionEl.value = data.descripcion;
+        const recomendacionesEl = document.getElementById('recomendaciones');
+        if (recomendacionesEl && data.recomendaciones) {
+            recomendacionesEl.value = data.recomendaciones;
         }
         
-        const observacionesEl = document.getElementById('observaciones');
-        if (observacionesEl && data.observaciones) {
-            observacionesEl.value = data.observaciones;
+        const conclusionEl = document.getElementById('conclusion');
+        if (conclusionEl && data.conclusion) {
+            conclusionEl.value = data.conclusion;
+        }
+        
+        // Load acciones correctivas
+        if (data.accionesCorrectivas && window.app) {
+            window.app.accionesCorrectivas = [];
+            data.accionesCorrectivas.forEach(accion => {
+                window.app.addAccionCorrectiva(accion);
+            });
         }
     }
 

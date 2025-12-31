@@ -12,6 +12,7 @@ class App {
         this.initialized = false;
         this.currentTab = 'datos';
         this.signaturePads = {};
+        this.accionesCorrectivas = [];
         this.init();
     }
 
@@ -33,6 +34,9 @@ class App {
 
             // **NOVO**: Initialize hours table calculations
             this.initHoursTable();
+            
+            // **NOVO**: Initialize acciones correctivas
+            setTimeout(() => this.initAccionesCorrectivas(), 100);
 
             // Auto-save every minute
             setInterval(() => {
@@ -606,6 +610,108 @@ class App {
         } catch (error) {
             console.error('Error generating report:', error);
             this.showStatus('Error al generar informe: ' + error.message, 'error');
+        }
+    }
+
+    
+    // ===== ACCIONES CORRECTIVAS =====
+    initAccionesCorrectivas() {
+        const btnAdd = document.getElementById('add-accion-correctiva');
+        if (btnAdd) {
+            btnAdd.addEventListener('click', () => this.addAccionCorrectiva());
+        }
+    }
+    
+    addAccionCorrectiva(data = null) {
+        const id = Date.now();
+        const accion = data || {
+            id,
+            titulo: '',
+            descripcionProblema: '',
+            intervencion: '',
+            resultado: ''
+        };
+        
+        this.accionesCorrectivas.push(accion);
+        this.renderAccionCorrectiva(accion);
+        
+        // Expand section if collapsed
+        const section = document.querySelector('#acciones-correctivas-container').closest('.collapsed-section');
+        if (section && !section.classList.contains('expanded')) {
+            const header = section.querySelector('.section-header-collapse');
+            if (header) this.toggleCollapse(header);
+        }
+    }
+    
+    renderAccionCorrectiva(accion) {
+        const container = document.getElementById('acciones-correctivas-container');
+        if (!container) return;
+        
+        const index = this.accionesCorrectivas.findIndex(a => a.id === accion.id);
+        
+        const card = document.createElement('div');
+        card.className = 'accion-correctiva-card';
+        card.dataset.id = accion.id;
+        card.innerHTML = `
+            <div class="accion-correctiva-header">
+                <span class="accion-correctiva-number">Acción Correctiva #${index + 1}</span>
+                <button type="button" class="btn-remove-accion" onclick="app.removeAccionCorrectiva(${accion.id})">✕</button>
+            </div>
+            <div class="form-field">
+                <label>Título</label>
+                <input type="text" class="accion-titulo" value="${accion.titulo || ''}" 
+                       onchange="app.updateAccionCorrectiva(${accion.id}, 'titulo', this.value)">
+            </div>
+            <div class="form-field">
+                <label>Descripción del Problema</label>
+                <textarea class="accion-descripcion" rows="3" 
+                          onchange="app.updateAccionCorrectiva(${accion.id}, 'descripcionProblema', this.value)">${accion.descripcionProblema || ''}</textarea>
+            </div>
+            <div class="form-field">
+                <label>Intervención</label>
+                <textarea class="accion-intervencion" rows="3" 
+                          onchange="app.updateAccionCorrectiva(${accion.id}, 'intervencion', this.value)">${accion.intervencion || ''}</textarea>
+            </div>
+            <div class="form-field">
+                <label>Resultado</label>
+                <textarea class="accion-resultado" rows="3" 
+                          onchange="app.updateAccionCorrectiva(${accion.id}, 'resultado', this.value)">${accion.resultado || ''}</textarea>
+            </div>
+        `;
+        
+        container.appendChild(card);
+    }
+    
+    updateAccionCorrectiva(id, field, value) {
+        const accion = this.accionesCorrectivas.find(a => a.id === id);
+        if (accion) {
+            accion[field] = value;
+        }
+    }
+    
+    removeAccionCorrectiva(id) {
+        if (!confirm('¿Eliminar esta acción correctiva?')) return;
+        
+        this.accionesCorrectivas = this.accionesCorrectivas.filter(a => a.id !== id);
+        
+        // Re-render all
+        const container = document.getElementById('acciones-correctivas-container');
+        if (container) {
+            container.innerHTML = '';
+            this.accionesCorrectivas.forEach(a => this.renderAccionCorrectiva(a));
+        }
+    }
+    
+    toggleCollapse(header) {
+        const section = header.closest('.collapsed-section');
+        const content = section.querySelector('.section-content');
+        
+        if (section.classList.contains('expanded')) {
+            section.classList.remove('expanded');
+            content.style.display = 'none';
+        } else {
+            section.classList.add('expanded');
+            content.style.display = 'block';
         }
     }
 

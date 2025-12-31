@@ -235,6 +235,74 @@ main {
   font-weight: 600;
 }
 
+/* Collapsed Sections */
+.collapsed-section .section-header-collapse {
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem 0;
+  user-select: none;
+}
+
+.collapsed-section .section-header-collapse:hover {
+  opacity: 0.8;
+}
+
+.collapsed-section .collapse-icon {
+  font-size: 1.2rem;
+  transition: transform 0.3s;
+}
+
+.collapsed-section.expanded .collapse-icon {
+  transform: rotate(180deg);
+}
+
+.collapsed-section .section-content {
+  padding-top: 1rem;
+}
+
+/* Acciones Correctivas */
+.accion-correctiva-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  position: relative;
+}
+
+.accion-correctiva-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.accion-correctiva-number {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--primary);
+}
+
+.btn-remove-accion {
+  background: var(--danger);
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 30px;
+  height: 30px;
+  cursor: pointer;
+  font-size: 1.2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-remove-accion:hover {
+  opacity: 0.8;
+}
+
 /* Form Fields */
 .form-row {
   display: grid;
