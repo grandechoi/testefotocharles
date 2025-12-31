@@ -49,13 +49,6 @@ class FormsManager {
                     <span class="section-number">${sectionIndex + 1}</span>
                     ${secao}
                 </h3>
-                <button class="btn-add-section-photo" data-section="${secao}">
-                    📷
-                </button>
-            </div>
-            <div class="section-photo-preview" data-section="${secao}" style="display: none;">
-                <img src="" alt="Foto da seção">
-                <button class="btn-remove-photo">✕</button>
             </div>
             <div class="items-list" data-section="${secao}" style="display: none;">
                 ${itens.map((item, itemIndex) => this.createItemHTML(secao, item, itemIndex)).join('')}
@@ -130,6 +123,12 @@ class FormsManager {
                     </button>
                     <button class="btn-item-photo btn-item-photo-2" title="Foto 2" data-secao="${secao}" data-item="${item}" data-photo="2">
                         📷 2
+                    </button>
+                    <button class="btn-item-photo btn-item-photo-3" title="Foto 3" data-secao="${secao}" data-item="${item}" data-photo="3">
+                        📷 3
+                    </button>
+                    <button class="btn-item-photo btn-item-photo-4" title="Foto 4" data-secao="${secao}" data-item="${item}" data-photo="4">
+                        📷 4
                     </button>
                 </div>
             </div>
@@ -758,9 +757,11 @@ class FormsManager {
         // Update item photos - atualiza TODOS os botões (com e sem foto)
         Object.keys(TOPICOS_INSPECAO).forEach(secao => {
             TOPICOS_INSPECAO[secao].forEach(item => {
-                // Atualizar botões de foto 1 e 2 para cada item
+                // Atualizar botões de foto 1, 2, 3 e 4 para cada item
                 this.updateItemPhotoButton(secao, item, 1);
                 this.updateItemPhotoButton(secao, item, 2);
+                this.updateItemPhotoButton(secao, item, 3);
+                this.updateItemPhotoButton(secao, item, 4);
             });
         });
     }
@@ -812,6 +813,16 @@ class FormsManager {
         ['viaje', 'normales', 'extras', 'sabados', 'feriados'].forEach(col => {
             const totalEl = document.getElementById(`total-${col}`);
             if (totalEl) totalEl.textContent = '0';
+        });
+
+        // Limpar todas as 4 fotos de cada item
+        Object.keys(TOPICOS_INSPECAO).forEach(secao => {
+            TOPICOS_INSPECAO[secao].forEach(item => {
+                this.updateItemPhotoButton(secao, item, 1);
+                this.updateItemPhotoButton(secao, item, 2);
+                this.updateItemPhotoButton(secao, item, 3);
+                this.updateItemPhotoButton(secao, item, 4);
+            });
         });
 
         console.log('✅ All data cleared (including signatures and hours)');

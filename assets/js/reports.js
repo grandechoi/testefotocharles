@@ -209,8 +209,8 @@ class ReportsManager {
                     })
                 );
 
-                // Item photos (LADO A LADO - up to 2)
-                const photoKeys = [`${secao}|${item}|1`, `${secao}|${item}|2`];
+                // Item photos (LADO A LADO - up to 4)
+                const photoKeys = [`${secao}|${item}|1`, `${secao}|${item}|2`, `${secao}|${item}|3`, `${secao}|${item}|4`];
                 const photos = [];
                 
                 for (const photoKey of photoKeys) {
@@ -221,8 +221,8 @@ class ReportsManager {
                                 new ImageRun({
                                     data: imageData,
                                     transformation: {
-                                        width: 250,
-                                        height: 188
+                                        width: 180,
+                                        height: 135
                                     }
                                 })
                             );
@@ -753,12 +753,9 @@ class ReportsManager {
             new Paragraph({
                 children: [
                     new TextRun({ text: "EMPRESA:  ", bold: true, size: 24 }),
-                    new TextRun({ text: (generalData?.empresa || 'SMURFIT WESTROCK NAVARRA').toUpperCase(), bold: true, size: 24 })
+                    new TextRun({ text: (generalData?.empresa || 'SMURFIT WESTROCK NAVARRA').toUpperCase(), size: 24, underline: { type: UnderlineType.SINGLE } })
                 ],
-                spacing: { after: 200 },
-                border: {
-                    bottom: { color: "000000", space: 1, value: "single", size: 6 }
-                }
+                spacing: { after: 200 }
             })
         );
 
@@ -766,28 +763,22 @@ class ReportsManager {
         documentChildren.push(
             new Paragraph({
                 children: [
-                    new TextRun({ text: "DIRECCION: ", bold: false, size: 22 }),
-                    new TextRun({ text: generalData?.direccion || 'Av. Padre Raimundo de Lumbier, s/n, 31400, Sangüesa, Navarra.', size: 22 })
+                    new TextRun({ text: "DIRECCION: ", bold: true, size: 22 }),
+                    new TextRun({ text: generalData?.direccion || 'Av. Padre Raimundo de Lumbier, s/n, 31400, Sangüesa, Navarra.', size: 22, underline: { type: UnderlineType.SINGLE } })
                 ],
-                spacing: { after: 200 },
-                border: {
-                    bottom: { color: "000000", space: 1, value: "single", size: 6 }
-                }
+                spacing: { after: 200 }
             })
         );
 
-        // CONTACTO
+        // CONTACTO (PERSONA/S DE CONTACTO)
         const contacto = signatures?.cliente?.nombre || 'Santi Arandigoyen, Gorka Arina';
         documentChildren.push(
             new Paragraph({
                 children: [
-                    new TextRun({ text: "CONTACTO:   ", bold: false, size: 22 }),
-                    new TextRun({ text: contacto, size: 22 })
+                    new TextRun({ text: "PERSONA/S DE CONTACTO:   ", bold: true, size: 22 }),
+                    new TextRun({ text: contacto, size: 22, underline: { type: UnderlineType.SINGLE } })
                 ],
-                spacing: { after: 200 },
-                border: {
-                    bottom: { color: "000000", space: 1, value: "single", size: 6 }
-                }
+                spacing: { after: 200 }
             })
         );
 
@@ -796,13 +787,10 @@ class ReportsManager {
         documentChildren.push(
             new Paragraph({
                 children: [
-                    new TextRun({ text: "INGENIERO: ", bold: false, size: 22 }),
-                    new TextRun({ text: ingeniero, size: 22 })
+                    new TextRun({ text: "INGENIERO: ", bold: true, size: 22 }),
+                    new TextRun({ text: ingeniero, size: 22, underline: { type: UnderlineType.SINGLE } })
                 ],
-                spacing: { after: 200 },
-                border: {
-                    bottom: { color: "000000", space: 1, value: "single", size: 6 }
-                }
+                spacing: { after: 200 }
             })
         );
 
@@ -811,13 +799,10 @@ class ReportsManager {
         documentChildren.push(
             new Paragraph({
                 children: [
-                    new TextRun({ text: "Nº DE PROYECTO: ", bold: false, size: 22 }),
-                    new TextRun({ text: proyecto, size: 22 })
+                    new TextRun({ text: "Nº DE PROYECTO: ", bold: true, size: 22 }),
+                    new TextRun({ text: proyecto, size: 22, underline: { type: UnderlineType.SINGLE } })
                 ],
-                spacing: { after: 400 },
-                border: {
-                    bottom: { color: "000000", space: 1, value: "single", size: 6 }
-                }
+                spacing: { after: 400 }
             })
         );
 
