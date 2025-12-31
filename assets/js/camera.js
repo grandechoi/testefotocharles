@@ -169,7 +169,83 @@ class CameraManager {
   getPhotos() {
     return this.photos;
   }
+
+  /**
+   * Simplified takePhoto for forms integration
+   * Opens camera, captures, and returns photo object
+   */
+  async takePhoto() {
+    return new Promise(async (resolve, reject) => {
+      try {
+        // Create modal for camera capture
+        const modal = document.createElement('div');
+        modal.className = 'photo-capture-modal';
+        modal.innerHTML = `
+          <div class="photo-capture-content">
+            <video id="camera-preview-temp" autoplay playsinline></video>
+            <canvas id="camera-canvas-temp" style="display:none;"></canvas>
+            <div class="photo-capture-actions">
+              <button class="btn-capture">📷 Capturar</button>
+              <button class="btn-cancel">✕ Cancelar</button>
+            </div>
+          </div>
+        `;
+        document.body.appendChild(modal);
+
+        const video = modal.querySelector('#camera-preview-temp');
+        const canvas = modal.querySelector('#camera-canvas-temp');
+        const btnCapture = modal.querySelector('.btn-capture');
+        const btnCancel = modal.querySelector('.btn-cancel');
+
+        // Start camera
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: { 
+            facingMode: "environment",
+            width: { ideal: 1920 },
+            height: { ideal: 1080 }
+          }
+        });
+
+        video.srcObject = stream;
+
+        // Capture button
+        btnCapture.onclick = () => {
+          // Capture frame
+          canvas.width = video.videoWidth;
+          canvas.height = video.videoHeight;
+          const context = canvas.getContext('2d');
+          context.drawImage(video, 0, 0);
+
+          const dataUrl = canvas.toDataURL('image/jpeg', 0.9);
+
+          // Convert to File object
+          fetch(dataUrl)
+            .then(res => res.blob())
+            .then(blob => {
+              const file = new File([blob], `photo_${Date.now()}.jpg`, { type: 'image/jpeg' });
+              
+              // Stop camera
+              stream.getTracks().forEach(track => track.stop());
+              document.body.removeChild(modal);
+
+              resolve({ file, dataUrl });
+            });
+        };
+
+        // Cancel button
+        btnCancel.onclick = () => {
+          stream.getTracks().forEach(track => track.stop());
+          document.body.removeChild(modal);
+          reject(new Error('Captura cancelada'));
+        };
+
+      } catch (error) {
+        console.error('Error in takePhoto:', error);
+        reject(error);
+      }
+    });
+  }
 }
 
 // Exportar instância global
-const camera = new CameraManager();
+export const cameraManager = new CameraManager();

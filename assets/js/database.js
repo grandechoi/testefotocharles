@@ -134,7 +134,46 @@ class DatabaseManager {
       mb: (totalSize / (1024 * 1024)).toFixed(2)
     };
   }
+
+  /**
+   * Generic save method
+   */
+  async save(key, data) {
+    try {
+      localStorage.setItem(`reportmanager:${key}`, JSON.stringify(data));
+      return true;
+    } catch (error) {
+      console.error(`Error saving ${key}:`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * Generic load method
+   */
+  async load(key) {
+    try {
+      const data = localStorage.getItem(`reportmanager:${key}`);
+      return data ? JSON.parse(data) : null;
+    } catch (error) {
+      console.error(`Error loading ${key}:`, error);
+      return null;
+    }
+  }
+
+  /**
+   * Generic delete method
+   */
+  async delete(key) {
+    try {
+      localStorage.removeItem(`reportmanager:${key}`);
+      return true;
+    } catch (error) {
+      console.error(`Error deleting ${key}:`, error);
+      return false;
+    }
+  }
 }
 
 // Exportar instância global
-const db = new DatabaseManager();
+export const db = new DatabaseManager();

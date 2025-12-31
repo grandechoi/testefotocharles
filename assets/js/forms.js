@@ -1,360 +1,459 @@
 /**
- * Forms Module - Gerenciamento de formulários e verificações
- * Controla entrada de dados, validação e interface de verificações
+ * forms.js
+ * Manages verification forms with PREDEFINED sections and items (GenReport structure)
  */
 
+import { db } from './database.js';
+import { cameraManager } from './camera.js';
+import { TOPICOS_INSPECAO, OPCOES_ESTADO } from './constants.js';
+import { StateSelectorModal } from './state-selector.js';
+
 class FormsManager {
-  constructor() {
-    this.verifications = [];
-    this.currentPhotoTarget = null; // Para saber qual verificação está recebendo fotos
-  }
-
-  /**
-   * Coleta todos os dados gerais do formulário
-   */
-  collectGeneralData() {
-    return {
-      año: document.getElementById('año').value,
-      semana: document.getElementById('semana').value,
-      cliente: document.getElementById('cliente').value,
-      albaran: document.getElementById('albaran').value,
-      codIngeniero: document.getElementById('cod-ingeniero').value,
-      ubicacion: document.getElementById('ubicacion').value,
-      perfiles: document.getElementById('perfiles').value,
-      peticiones: document.getElementById('peticiones').value
-    };
-  }
-
-  /**
-   * Preenche formulário com dados
-   */
-  populateGeneralData(data) {
-    document.getElementById('año').value = data.año || '';
-    document.getElementById('semana').value = data.semana || '';
-    document.getElementById('cliente').value = data.cliente || '';
-    document.getElementById('albaran').value = data.albaran || '';
-    document.getElementById('cod-ingeniero').value = data.codIngeniero || '';
-    document.getElementById('ubicacion').value = data.ubicacion || '';
-    document.getElementById('perfiles').value = data.perfiles || '';
-    document.getElementById('peticiones').value = data.peticiones || '';
-  }
-
-  /**
-   * Coleta observações
-   */
-  collectObservations() {
-    return document.getElementById('observaciones').value;
-  }
-
-  /**
-   * Preenche observações
-   */
-  populateObservations(text) {
-    document.getElementById('observaciones').value = text || '';
-  }
-
-  /**
-   * Adiciona nova seção de verificação
-   */
-  addVerification(data = null) {
-    const verification = {
-      id: Date.now() + Math.random(),
-      section: data?.section || '',
-      item: data?.item || '',
-      status: data?.status || '',
-      photos: data?.photos || []
-    };
-
-    this.verifications.push(verification);
-    this.renderVerification(verification);
-    return verification;
-  }
-
-  /**
-   * Renderiza uma verificação na UI
-   */
-  renderVerification(verification) {
-    const container = document.getElementById('verification-sections');
-    const item = document.createElement('div');
-    item.className = 'verification-item';
-    item.dataset.id = verification.id;
-
-    item.innerHTML = `
-      <div class="verification-header">
-        <h3>Verificación ${this.verifications.indexOf(verification) + 1}</h3>
-        <button type="button" class="btn btn-danger btn-small" onclick="forms.removeVerification(${verification.id})">
-          🗑️ Eliminar
-        </button>
-      </div>
-      
-      <div class="form-field">
-        <label>Sección</label>
-        <input type="text" class="verification-section" value="${verification.section}" 
-               placeholder="ej: Sistema mecánico" 
-               onchange="forms.updateVerification(${verification.id})">
-      </div>
-
-      <div class="form-field">
-        <label>Item</label>
-        <input type="text" class="verification-item-name" value="${verification.item}" 
-               placeholder="ej: Rodillos superiores" 
-               onchange="forms.updateVerification(${verification.id})">
-      </div>
-
-      <div class="form-field">
-        <label>Estado/Intervención</label>
-        <textarea class="verification-status" rows="2" 
-                  onchange="forms.updateVerification(${verification.id})">${verification.status}</textarea>
-      </div>
-
-      <div class="form-field">
-        <label>Fotos</label>
-        <button type="button" class="btn btn-secondary btn-small" 
-                onclick="forms.openPhotoModal(${verification.id})">
-          📸 Añadir Fotos (${verification.photos.length})
-        </button>
-        <div class="photo-section" data-photos-container="${verification.id}">
-          ${this.renderPhotoPreviews(verification.photos, verification.id)}
-        </div>
-      </div>
-    `;
-
-    container.appendChild(item);
-  }
-
-  /**
-   * Renderiza miniaturas de fotos
-   */
-  renderPhotoPreviews(photos, verificationId) {
-    return photos.map((photo, index) => `
-      <div class="photo-preview">
-        <img src="${photo}" alt="Foto ${index + 1}">
-        <button type="button" class="photo-remove" 
-                onclick="forms.removePhoto(${verificationId}, ${index})">
-          ×
-        </button>
-      </div>
-    `).join('');
-  }
-
-  /**
-   * Atualiza dados de uma verificação
-   */
-  updateVerification(verificationId) {
-    const item = document.querySelector(`[data-id="${verificationId}"]`);
-    if (!item) return;
-
-    const verification = this.verifications.find(v => v.id === verificationId);
-    if (!verification) return;
-
-    verification.section = item.querySelector('.verification-section').value;
-    verification.item = item.querySelector('.verification-item-name').value;
-    verification.status = item.querySelector('.verification-status').value;
-
-    // Auto-save
-    this.autoSave();
-  }
-
-  /**
-   * Remove uma verificação
-   */
-  removeVerification(verificationId) {
-    this.verifications = this.verifications.filter(v => v.id !== verificationId);
-    const item = document.querySelector(`[data-id="${verificationId}"]`);
-    if (item) item.remove();
-
-    // Renumerar títulos
-    this.renumberVerifications();
-    this.autoSave();
-  }
-
-  /**
-   * Renumera verificações após remoção
-   */
-  renumberVerifications() {
-    const items = document.querySelectorAll('.verification-item');
-    items.forEach((item, index) => {
-      const header = item.querySelector('h3');
-      if (header) {
-        header.textContent = `Verificación ${index + 1}`;
-      }
-    });
-  }
-
-  /**
-   * Abre modal de fotos para uma verificação específica
-   */
-  openPhotoModal(verificationId) {
-    this.currentPhotoTarget = verificationId;
-    const modal = document.getElementById('photo-modal');
-    modal.classList.remove('hidden');
-
-    // Limpar fotos selecionadas do modal
-    camera.clearPhotos();
-    this.renderModalPhotos();
-  }
-
-  /**
-   * Fecha modal de fotos
-   */
-  closePhotoModal() {
-    const modal = document.getElementById('photo-modal');
-    modal.classList.add('hidden');
-    camera.stopCamera();
-    camera.clearPhotos();
-  }
-
-  /**
-   * Confirma fotos selecionadas
-   */
-  confirmPhotos() {
-    if (this.currentPhotoTarget === null) return;
-
-    const verification = this.verifications.find(v => v.id === this.currentPhotoTarget);
-    if (!verification) return;
-
-    // Adicionar novas fotos
-    verification.photos.push(...camera.getPhotos());
-
-    // Atualizar UI
-    const container = document.querySelector(`[data-photos-container="${this.currentPhotoTarget}"]`);
-    if (container) {
-      container.innerHTML = this.renderPhotoPreviews(verification.photos, this.currentPhotoTarget);
+    constructor() {
+        this.sectionsContainer = document.getElementById('sections-container');
+        this.itemStates = {}; // { "secao|item": ["estado1", "estado2"] }
+        this.sectionPhotos = {}; // { "secao": { file, dataUrl } }
+        this.itemPhotos = {}; // { "secao|item|1": { file, dataUrl }, "secao|item|2": { file, dataUrl } }
+        this.stateModal = new StateSelectorModal();
+        
+        this.init();
     }
 
-    // Atualizar contador no botão
-    const button = container?.previousElementSibling;
-    if (button) {
-      button.textContent = `📸 Añadir Fotos (${verification.photos.length})`;
+    init() {
+        this.renderAllSections();
+        this.loadData();
     }
 
-    this.closePhotoModal();
-    this.autoSave();
-  }
-
-  /**
-   * Renderiza fotos no modal
-   */
-  renderModalPhotos() {
-    const container = document.getElementById('selected-photos');
-    const photos = camera.getPhotos();
-
-    container.innerHTML = photos.map((photo, index) => `
-      <div class="photo-preview">
-        <img src="${photo}" alt="Foto ${index + 1}">
-        <button type="button" class="photo-remove" onclick="forms.removeModalPhoto(${index})">
-          ×
-        </button>
-      </div>
-    `).join('');
-  }
-
-  /**
-   * Remove foto do modal (antes de confirmar)
-   */
-  removeModalPhoto(index) {
-    camera.removePhoto(index);
-    this.renderModalPhotos();
-  }
-
-  /**
-   * Remove foto de uma verificação
-   */
-  removePhoto(verificationId, photoIndex) {
-    const verification = this.verifications.find(v => v.id === verificationId);
-    if (!verification) return;
-
-    verification.photos.splice(photoIndex, 1);
-
-    // Atualizar UI
-    const container = document.querySelector(`[data-photos-container="${verificationId}"]`);
-    if (container) {
-      container.innerHTML = this.renderPhotoPreviews(verification.photos, verificationId);
-    }
-
-    // Atualizar contador
-    const button = container?.previousElementSibling;
-    if (button) {
-      button.textContent = `📸 Añadir Fotos (${verification.photos.length})`;
-    }
-
-    this.autoSave();
-  }
-
-  /**
-   * Limpa todos os dados do formulário
-   */
-  clearAll() {
-    if (!confirm('¿Está seguro de que desea borrar todos los datos?')) {
-      return;
-    }
-
-    // Limpar campos gerais
-    document.getElementById('año').value = '';
-    document.getElementById('semana').value = '';
-    document.getElementById('cliente').value = '';
-    document.getElementById('albaran').value = '';
-    document.getElementById('cod-ingeniero').value = '';
-    document.getElementById('ubicacion').value = '';
-    document.getElementById('perfiles').value = '';
-    document.getElementById('peticiones').value = '';
-    document.getElementById('observaciones').value = '';
-
-    // Limpar verificações
-    this.verifications = [];
-    document.getElementById('verification-sections').innerHTML = '';
-
-    // Limpar storage
-    db.clearCurrent();
-
-    this.showStatus('Datos borrados correctamente', 'success');
-  }
-
-  /**
-   * Auto-save em background
-   */
-  autoSave() {
-    const data = {
-      general: this.collectGeneralData(),
-      verifications: this.verifications,
-      observations: this.collectObservations()
-    };
-    db.saveCurrent(data);
-  }
-
-  /**
-   * Carrega dados salvos automaticamente
-   */
-  loadAutoSaved() {
-    const data = db.loadCurrent();
-    if (data) {
-      this.populateGeneralData(data.general);
-      this.populateObservations(data.observations);
-      
-      // Carregar verificações
-      if (data.verifications) {
-        data.verifications.forEach(v => {
-          this.verifications.push(v);
-          this.renderVerification(v);
+    /**
+     * Renderiza TODAS as seções e itens pré-definidos
+     */
+    renderAllSections() {
+        this.sectionsContainer.innerHTML = '';
+        
+        Object.entries(TOPICOS_INSPECAO).forEach(([secao, itens], sectionIndex) => {
+            const sectionCard = this.createSectionCard(secao, itens, sectionIndex);
+            this.sectionsContainer.appendChild(sectionCard);
         });
-      }
     }
-  }
 
-  /**
-   * Mostra mensagem de status
-   */
-  showStatus(message, type = 'success') {
-    const statusEl = document.getElementById('status');
-    statusEl.textContent = message;
-    statusEl.className = type;
-    
-    setTimeout(() => {
-      statusEl.textContent = '';
-      statusEl.className = '';
-    }, 5000);
-  }
+    /**
+     * Cria card de seção com todos os itens
+     */
+    createSectionCard(secao, itens, sectionIndex) {
+        const card = document.createElement('div');
+        card.className = 'section-card';
+        card.innerHTML = `
+            <div class="section-header">
+                <h3>
+                    <span class="section-number">${sectionIndex + 1}</span>
+                    ${secao}
+                </h3>
+                <button class="btn-add-section-photo" data-section="${secao}">
+                    📷 Foto da Seção
+                </button>
+            </div>
+            <div class="section-photo-preview" data-section="${secao}" style="display: none;">
+                <img src="" alt="Foto da seção">
+                <button class="btn-remove-photo">✕</button>
+            </div>
+            <div class="items-list" data-section="${secao}">
+                ${itens.map((item, itemIndex) => this.createItemHTML(secao, item, itemIndex)).join('')}
+            </div>
+        `;
+
+        // Event listeners
+        const btnSectionPhoto = card.querySelector('.btn-add-section-photo');
+        btnSectionPhoto.addEventListener('click', () => this.addSectionPhoto(secao));
+
+        // Items event listeners
+        itens.forEach((item, itemIndex) => {
+            const itemElement = card.querySelector(`[data-item-index="${itemIndex}"]`);
+            
+            // State selector button
+            const btnState = itemElement.querySelector('.btn-select-state');
+            btnState.addEventListener('click', () => this.openStateSelector(secao, item));
+
+            // Photo buttons
+            const btnPhoto1 = itemElement.querySelector('.btn-item-photo-1');
+            const btnPhoto2 = itemElement.querySelector('.btn-item-photo-2');
+            btnPhoto1.addEventListener('click', () => this.addItemPhoto(secao, item, 1));
+            btnPhoto2.addEventListener('click', () => this.addItemPhoto(secao, item, 2));
+        });
+
+        return card;
+    }
+
+    /**
+     * Cria HTML de um item
+     */
+    createItemHTML(secao, item, itemIndex) {
+        const key = `${secao}|${item}`;
+        const states = this.itemStates[key] || [];
+        const statesText = states.length > 0 ? states.join(', ') : 'Seleccionar estados...';
+        const hasStates = states.length > 0;
+
+        return `
+            <div class="item-row" data-item-index="${itemIndex}">
+                <div class="item-info">
+                    <span class="item-number">${itemIndex + 1}</span>
+                    <span class="item-name">${item}</span>
+                </div>
+                <button class="btn-select-state ${hasStates ? 'has-selection' : ''}" 
+                        title="Modificar seleção">
+                    <span class="state-text">${statesText}</span>
+                    ${hasStates ? `<span class="state-count">(${states.length})</span>` : ''}
+                </button>
+                <div class="item-photos">
+                    <button class="btn-item-photo btn-item-photo-1" title="Foto 1">
+                        📷 1
+                    </button>
+                    <button class="btn-item-photo btn-item-photo-2" title="Foto 2">
+                        📷 2
+                    </button>
+                </div>
+            </div>
+        `;
+    }
+
+    /**
+     * Abre modal para selecionar estados
+     */
+    openStateSelector(secao, item) {
+        const key = `${secao}|${item}`;
+        const availableStates = OPCOES_ESTADO[item] || [];
+        const currentStates = this.itemStates[key] || [];
+
+        this.stateModal.open(item, availableStates, currentStates, (selectedStates) => {
+            this.itemStates[key] = selectedStates;
+            this.updateItemDisplay(secao, item);
+            this.saveData();
+        });
+    }
+
+    /**
+     * Atualiza display do item após mudança de estado
+     */
+    updateItemDisplay(secao, item) {
+        const key = `${secao}|${item}`;
+        const states = this.itemStates[key] || [];
+        const itemIndex = TOPICOS_INSPECAO[secao].indexOf(item);
+        
+        const itemElement = this.sectionsContainer.querySelector(
+            `[data-section="${secao}"] .item-row[data-item-index="${itemIndex}"]`
+        );
+
+        if (itemElement) {
+            const btnState = itemElement.querySelector('.btn-select-state');
+            const stateText = itemElement.querySelector('.state-text');
+            const stateCount = itemElement.querySelector('.state-count');
+
+            if (states.length > 0) {
+                stateText.textContent = states.join(', ');
+                btnState.classList.add('has-selection');
+                if (stateCount) {
+                    stateCount.textContent = `(${states.length})`;
+                } else {
+                    const countSpan = document.createElement('span');
+                    countSpan.className = 'state-count';
+                    countSpan.textContent = `(${states.length})`;
+                    btnState.appendChild(countSpan);
+                }
+            } else {
+                stateText.textContent = 'Seleccionar estados...';
+                btnState.classList.remove('has-selection');
+                if (stateCount) {
+                    stateCount.remove();
+                }
+            }
+        }
+    }
+
+    /**
+     * Adiciona foto da seção
+     */
+    async addSectionPhoto(secao) {
+        try {
+            const photo = await cameraManager.takePhoto();
+            this.sectionPhotos[secao] = {
+                file: photo.file,
+                dataUrl: photo.dataUrl,
+                timestamp: Date.now()
+            };
+            
+            // Update UI
+            const preview = this.sectionsContainer.querySelector(
+                `[data-section="${secao}"] .section-photo-preview`
+            );
+            if (preview) {
+                preview.style.display = 'block';
+                preview.querySelector('img').src = photo.dataUrl;
+                
+                const btnRemove = preview.querySelector('.btn-remove-photo');
+                btnRemove.onclick = () => this.removeSectionPhoto(secao);
+            }
+
+            this.saveData();
+        } catch (error) {
+            console.error('Error adding section photo:', error);
+            alert('Error al capturar foto: ' + error.message);
+        }
+    }
+
+    /**
+     * Remove foto da seção
+     */
+    removeSectionPhoto(secao) {
+        delete this.sectionPhotos[secao];
+        
+        const preview = this.sectionsContainer.querySelector(
+            `[data-section="${secao}"] .section-photo-preview`
+        );
+        if (preview) {
+            preview.style.display = 'none';
+            preview.querySelector('img').src = '';
+        }
+
+        this.saveData();
+    }
+
+    /**
+     * Adiciona foto de item (1 ou 2)
+     */
+    async addItemPhoto(secao, item, photoNumber) {
+        try {
+            const photo = await cameraManager.takePhoto();
+            const key = `${secao}|${item}|${photoNumber}`;
+            
+            this.itemPhotos[key] = {
+                file: photo.file,
+                dataUrl: photo.dataUrl,
+                timestamp: Date.now()
+            };
+
+            // Update button UI
+            const itemIndex = TOPICOS_INSPECAO[secao].indexOf(item);
+            const itemElement = this.sectionsContainer.querySelector(
+                `[data-section="${secao}"] .item-row[data-item-index="${itemIndex}"]`
+            );
+
+            if (itemElement) {
+                const btn = itemElement.querySelector(`.btn-item-photo-${photoNumber}`);
+                btn.classList.add('has-photo');
+                btn.textContent = `✓ ${photoNumber}`;
+            }
+
+            this.saveData();
+        } catch (error) {
+            console.error('Error adding item photo:', error);
+            alert('Error al capturar foto: ' + error.message);
+        }
+    }
+
+    /**
+     * Coleta dados gerais do formulário
+     */
+    collectGeneralData() {
+        return {
+            año: document.getElementById('año')?.value || '',
+            semana: document.getElementById('semana')?.value || '',
+            cliente: document.getElementById('cliente')?.value || '',
+            albaran: document.getElementById('albaran')?.value || '',
+            codIngeniero: document.getElementById('cod-ingeniero')?.value || '',
+            ubicacion: document.getElementById('ubicacion')?.value || '',
+            perfiles: document.getElementById('perfiles')?.value || '',
+            peticiones: document.getElementById('peticiones')?.value || ''
+        };
+    }
+
+    /**
+     * Popula dados gerais no formulário
+     */
+    populateGeneralData(data) {
+        if (!data) return;
+
+        const fields = ['año', 'semana', 'cliente', 'albaran', 'cod-ingeniero', 
+                       'ubicacion', 'perfiles', 'peticiones'];
+        
+        fields.forEach(field => {
+            const element = document.getElementById(field);
+            if (element && data[field]) {
+                element.value = data[field];
+            }
+        });
+    }
+
+    /**
+     * Coleta observações
+     */
+    collectObservations() {
+        return document.getElementById('observaciones')?.value || '';
+    }
+
+    /**
+     * Popula observações
+     */
+    populateObservations(text) {
+        const element = document.getElementById('observaciones');
+        if (element) {
+            element.value = text || '';
+        }
+    }
+
+    /**
+     * Salva todos os dados
+     */
+    async saveData() {
+        try {
+            const data = {
+                generalData: this.collectGeneralData(),
+                observations: this.collectObservations(),
+                itemStates: this.itemStates,
+                sectionPhotos: this.sectionPhotos,
+                itemPhotos: this.itemPhotos,
+                timestamp: Date.now()
+            };
+
+            await db.save('currentReport', data);
+            console.log('✅ Data saved successfully');
+        } catch (error) {
+            console.error('❌ Error saving data:', error);
+        }
+    }
+
+    /**
+     * Carrega dados salvos
+     */
+    async loadData() {
+        try {
+            const data = await db.load('currentReport');
+            if (!data) return;
+
+            this.itemStates = data.itemStates || {};
+            this.sectionPhotos = data.sectionPhotos || {};
+            this.itemPhotos = data.itemPhotos || {};
+
+            this.populateGeneralData(data.generalData);
+            this.populateObservations(data.observations);
+            
+            // Update UI
+            this.updateAllDisplays();
+            
+            console.log('✅ Data loaded successfully');
+        } catch (error) {
+            console.error('❌ Error loading data:', error);
+        }
+    }
+
+    /**
+     * Atualiza todos os displays após carregar dados
+     */
+    updateAllDisplays() {
+        // Update item states
+        Object.entries(this.itemStates).forEach(([key, states]) => {
+            const [secao, item] = key.split('|');
+            this.updateItemDisplay(secao, item);
+        });
+
+        // Update section photos
+        Object.entries(this.sectionPhotos).forEach(([secao, photo]) => {
+            const preview = this.sectionsContainer.querySelector(
+                `[data-section="${secao}"] .section-photo-preview`
+            );
+            if (preview && photo.dataUrl) {
+                preview.style.display = 'block';
+                preview.querySelector('img').src = photo.dataUrl;
+                
+                const btnRemove = preview.querySelector('.btn-remove-photo');
+                btnRemove.onclick = () => this.removeSectionPhoto(secao);
+            }
+        });
+
+        // Update item photos
+        Object.entries(this.itemPhotos).forEach(([key, photo]) => {
+            const [secao, item, photoNumber] = key.split('|');
+            const itemIndex = TOPICOS_INSPECAO[secao].indexOf(item);
+            
+            const itemElement = this.sectionsContainer.querySelector(
+                `[data-section="${secao}"] .item-row[data-item-index="${itemIndex}"]`
+            );
+
+            if (itemElement) {
+                const btn = itemElement.querySelector(`.btn-item-photo-${photoNumber}`);
+                if (btn) {
+                    btn.classList.add('has-photo');
+                    btn.textContent = `✓ ${photoNumber}`;
+                }
+            }
+        });
+    }
+
+    /**
+     * Limpa todos os dados
+     */
+    async clearAll() {
+        if (!confirm('¿Está seguro de que desea borrar todos los datos?')) {
+            return;
+        }
+
+        this.itemStates = {};
+        this.sectionPhotos = {};
+        this.itemPhotos = {};
+
+        await db.delete('currentReport');
+        
+        this.renderAllSections();
+        
+        // Clear general form
+        ['año', 'semana', 'cliente', 'albaran', 'cod-ingeniero', 
+         'ubicacion', 'perfiles', 'peticiones', 'observaciones'].forEach(field => {
+            const element = document.getElementById(field);
+            if (element) element.value = '';
+        });
+
+        console.log('✅ All data cleared');
+    }
+
+    /**
+     * Obtém dados completos para geração de relatório
+     */
+    async getReportData() {
+        return {
+            generalData: this.collectGeneralData(),
+            observations: this.collectObservations(),
+            sections: this.formatSectionsForReport(),
+            sectionPhotos: this.sectionPhotos,
+            itemPhotos: this.itemPhotos
+        };
+    }
+
+    /**
+     * Formata seções para relatório (compatível com docx.js)
+     */
+    formatSectionsForReport() {
+        const formatted = {};
+
+        Object.entries(TOPICOS_INSPECAO).forEach(([secao, itens]) => {
+            formatted[secao] = {};
+            
+            itens.forEach(item => {
+                const key = `${secao}|${item}`;
+                const states = this.itemStates[key] || [];
+                
+                // Só incluir itens com estados selecionados
+                if (states.length > 0) {
+                    formatted[secao][item] = states.join(', ');
+                }
+            });
+        });
+
+        return formatted;
+    }
 }
 
-// Exportar instância global
-const forms = new FormsManager();
+// Exporta instância única
+export const formsManager = new FormsManager();
+
+// Auto-save a cada 30 segundos
+setInterval(() => {
+    formsManager.saveData();
+}, 30000);

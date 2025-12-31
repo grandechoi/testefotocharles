@@ -362,6 +362,448 @@ textarea {
   transition: background 0.2s ease;
 }
 
+/* ============================================
+   PRE-DEFINED SECTIONS & ITEMS STRUCTURE  
+   (GenReport Python Style)
+   ============================================ */
+
+.section-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+  padding-bottom: 1rem;
+  border-bottom: 2px solid var(--primary);
+}
+
+.section-header h3 {
+  margin: 0;
+  font-size: 1.3rem;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.section-number {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  background: var(--primary);
+  color: white;
+  border-radius: 50%;
+  font-size: 0.9rem;
+  font-weight: bold;
+}
+
+.btn-add-section-photo {
+  padding: 0.5rem 1rem;
+  background: var(--primary);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: all 0.2s;
+}
+
+.btn-add-section-photo:hover {
+  background: var(--primary-hover);
+  transform: translateY(-1px);
+}
+
+.section-photo-preview {
+  position: relative;
+  margin: 1rem 0;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.section-photo-preview img {
+  width: 100%;
+  max-height: 300px;
+  object-fit: cover;
+}
+
+.section-photo-preview .btn-remove-photo {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: rgba(244, 67, 54, 0.9);
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 30px;
+  height: 30px;
+  cursor: pointer;
+  font-size: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.items-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.item-row {
+  display: grid;
+  grid-template-columns: 250px 1fr auto;
+  gap: 1rem;
+  align-items: center;
+  padding: 0.75rem;
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 8px;
+  border: 1px solid transparent;
+  transition: all 0.2s;
+}
+
+.item-row:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: var(--border);
+}
+
+.item-info {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.item-number {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  background: rgba(76, 175, 80, 0.2);
+  color: var(--primary);
+  border-radius: 50%;
+  font-size: 0.85rem;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.item-name {
+  color: var(--text-primary);
+  font-size: 0.95rem;
+  font-weight: 500;
+}
+
+.btn-select-state {
+  flex: 1;
+  padding: 0.6rem 1rem;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.9rem;
+}
+
+.btn-select-state:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: var(--primary);
+}
+
+.btn-select-state.has-selection {
+  background: rgba(76, 175, 80, 0.15);
+  border-color: var(--primary);
+  color: var(--text-primary);
+}
+
+.state-text {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.state-count {
+  background: var(--primary);
+  color: white;
+  padding: 0.2rem 0.5rem;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  margin-left: 0.5rem;
+}
+
+.item-photos {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.btn-item-photo {
+  padding: 0.5rem 0.75rem;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-size: 0.85rem;
+  transition: all 0.2s;
+  min-width: 60px;
+}
+
+.btn-item-photo:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: var(--primary);
+}
+
+.btn-item-photo.has-photo {
+  background: rgba(76, 175, 80, 0.2);
+  border-color: var(--primary);
+  color: var(--primary);
+  font-weight: 600;
+}
+
+/* ============================================
+   STATE SELECTOR MODAL
+   ============================================ */
+
+.state-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 10000;
+}
+
+.state-modal-content {
+  background: #2c2c2c;
+  border-radius: 12px;
+  padding: 0;
+  max-width: 500px;
+  width: 90%;
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+}
+
+.state-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 24px;
+  border-bottom: 1px solid #404040;
+}
+
+.state-modal-header h3 {
+  margin: 0;
+  color: #4CAF50;
+  font-size: 20px;
+}
+
+.state-modal-close {
+  background: none;
+  border: none;
+  color: #999;
+  font-size: 28px;
+  cursor: pointer;
+  padding: 0;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: all 0.2s;
+}
+
+.state-modal-close:hover {
+  background: #404040;
+  color: #fff;
+}
+
+.state-modal-subtitle {
+  padding: 16px 24px;
+  margin: 0;
+  color: #ddd;
+  font-size: 14px;
+  background: #242424;
+}
+
+.state-modal-checkboxes {
+  padding: 20px 24px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.state-checkbox-label {
+  display: flex;
+  align-items: center;
+  padding: 10px 12px;
+  margin-bottom: 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.2s;
+  color: #ddd;
+}
+
+.state-checkbox-label:hover {
+  background: #353535;
+}
+
+.state-checkbox-label input[type="checkbox"] {
+  margin-right: 12px;
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+  accent-color: #4CAF50;
+}
+
+.state-modal-footer {
+  padding: 16px 24px;
+  border-top: 1px solid #404040;
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+.btn-modal-cancel,
+.btn-modal-confirm {
+  padding: 10px 24px;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-weight: 500;
+}
+
+.btn-modal-cancel {
+  background: #404040;
+  color: #fff;
+}
+
+.btn-modal-cancel:hover {
+  background: #4a4a4a;
+}
+
+.btn-modal-confirm {
+  background: #4CAF50;
+  color: white;
+}
+
+.btn-modal-confirm:hover {
+  background: #45a049;
+}
+
+/* ============================================
+   RESPONSIVE DESIGN
+   ============================================ */
+
+@media (max-width: 768px) {
+  .item-row {
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+  }
+
+  .section-header {
+    flex-direction: column;
+    gap: 0.75rem;
+    align-items: flex-start;
+  }
+
+  .btn-add-section-photo {
+    width: 100%;
+  }
+}
+
+/* ============================================
+   PHOTO CAPTURE MODAL
+   ============================================ */
+
+.photo-capture-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.95);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 20000;
+}
+
+.photo-capture-content {
+  width: 90%;
+  max-width: 600px;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.photo-capture-content video {
+  width: 100%;
+  border-radius: 12px;
+  background: black;
+}
+
+.photo-capture-actions {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+}
+
+.btn-capture,
+.btn-cancel {
+  padding: 1rem 2rem;
+  font-size: 1.1rem;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.2s;
+}
+
+.btn-capture {
+  background: var(--primary);
+  color: white;
+  flex: 1;
+}
+
+.btn-capture:hover {
+  background: var(--primary-hover);
+  transform: scale(1.05);
+}
+
+.btn-cancel {
+  background: #f44336;
+  color: white;
+  flex: 0.5;
+}
+
+.btn-cancel:hover {
+  background: #d32f2f;
+  transform: scale(1.05);
+}
+}
+
 .draft-item:hover {
   background: #e9ecef;
 }

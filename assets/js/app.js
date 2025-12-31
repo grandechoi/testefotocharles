@@ -1,326 +1,254 @@
 /**
- * App.js - Inicialização e orquestração da aplicação
- * Conecta todos os módulos e gerencia eventos da interface
+ * app.js
+ * Main application orchestration (GenReport PWA version)
  */
 
+import { formsManager } from './forms.js';
+import { cameraManager } from './camera.js';
+import { reportsManager } from './reports.js';
+
 class App {
-  constructor() {
-    this.initialized = false;
-  }
-
-  /**
-   * Inicializa a aplicação
-   */
-  async init() {
-    if (this.initialized) return;
-
-    try {
-      // Registrar service worker
-      await this.registerServiceWorker();
-
-      // Inicializar câmera
-      camera.init(
-        document.getElementById('camera-preview'),
-        document.getElementById('camera-snapshot')
-      );
-
-      // Configurar event listeners
-      this.setupEventListeners();
-
-      // Carregar dados salvos automaticamente
-      forms.loadAutoSaved();
-
-      // Marcar como inicializado
-      this.initialized = true;
-
-      console.log('✅ ReportManager inicializado com sucesso');
-    } catch (error) {
-      console.error('Erro ao inicializar app:', error);
-      forms.showStatus('Error al inicializar la aplicación', 'error');
-    }
-  }
-
-  /**
-   * Registra service worker para funcionamento offline
-   */
-  async registerServiceWorker() {
-    if (!('serviceWorker' in navigator)) {
-      console.warn('Service Worker não suportado');
-      return;
+    constructor() {
+        this.initialized = false;
+        this.init();
     }
 
-    try {
-      await navigator.serviceWorker.register('./sw.js');
-      console.log('✅ Service Worker registrado');
-    } catch (error) {
-      console.warn('Falha ao registrar Service Worker:', error);
-    }
-  }
+    async init() {
+        if (this.initialized) return;
 
-  /**
-   * Configura todos os event listeners
-   */
-  setupEventListeners() {
-    // Botão adicionar verificação
-    document.getElementById('add-verification').addEventListener('click', () => {
-      forms.addVerification();
-    });
-
-    // Botão gerar relatório
-    document.getElementById('generate-report').addEventListener('click', async () => {
-      const btn = document.getElementById('generate-report');
-      btn.disabled = true;
-      btn.textContent = '⏳ Generando...';
-
-      await reportGenerator.generateReport();
-
-      btn.disabled = false;
-      btn.textContent = '📄 Generar Informe Word';
-    });
-
-    // Botão salvar rascunho
-    document.getElementById('save-draft').addEventListener('click', () => {
-      this.showSaveDraftDialog();
-    });
-
-    // Botão carregar rascunho
-    document.getElementById('load-draft').addEventListener('click', () => {
-      this.showLoadDraftDialog();
-    });
-
-    // Botão limpar tudo
-    document.getElementById('clear-all').addEventListener('click', () => {
-      forms.clearAll();
-    });
-
-    // Modal de fotos
-    this.setupPhotoModalListeners();
-
-    // Auto-save ao alterar campos gerais
-    this.setupAutoSave();
-  }
-
-  /**
-   * Configura listeners do modal de fotos
-   */
-  setupPhotoModalListeners() {
-    const modal = document.getElementById('photo-modal');
-    const openCameraBtn = document.getElementById('open-camera');
-    const takePhotoBtn = document.getElementById('take-photo');
-    const closeCameraBtn = document.getElementById('close-camera');
-    const fileInput = document.getElementById('file-input');
-    const confirmBtn = document.getElementById('confirm-photos');
-
-    // Botões de fechar modal
-    modal.querySelectorAll('.modal-close').forEach(btn => {
-      btn.addEventListener('click', () => forms.closePhotoModal());
-    });
-
-    // Fechar ao clicar fora
-    modal.addEventListener('click', (e) => {
-      if (e.target === modal) {
-        forms.closePhotoModal();
-      }
-    });
-
-    // Abrir câmera
-    openCameraBtn.addEventListener('click', async () => {
-      try {
-        await camera.startCamera();
-        openCameraBtn.classList.add('hidden');
-        takePhotoBtn.classList.remove('hidden');
-        closeCameraBtn.classList.remove('hidden');
-      } catch (error) {
-        forms.showStatus(error.message, 'error');
-      }
-    });
-
-    // Tirar foto
-    takePhotoBtn.addEventListener('click', () => {
-      try {
-        const photo = camera.capturePhoto();
-        camera.addPhoto(photo);
-        forms.renderModalPhotos();
-      } catch (error) {
-        forms.showStatus('Error al capturar foto', 'error');
-      }
-    });
-
-    // Fechar câmera
-    closeCameraBtn.addEventListener('click', () => {
-      camera.stopCamera();
-      openCameraBtn.classList.remove('hidden');
-      takePhotoBtn.classList.add('hidden');
-      closeCameraBtn.classList.add('hidden');
-    });
-
-    // Upload de arquivo
-    fileInput.addEventListener('change', async (e) => {
-      const files = Array.from(e.target.files);
-      
-      for (const file of files) {
         try {
-          let dataUrl = await camera.fileToDataUrl(file);
-          dataUrl = await camera.resizeImage(dataUrl);
-          camera.addPhoto(dataUrl);
+            // Register service worker
+            await this.registerServiceWorker();
+
+            // Setup event listeners
+            this.setupEventListeners();
+
+            // Initialize camera
+            await cameraManager.init();
+
+            // Auto-save every minute
+            setInterval(() => {
+                formsManager.saveData();
+            }, 60000);
+
+            this.initialized = true;
+            console.log('✅ ReportManager initialized successfully');
+            
+            this.showStatus('Aplicación lista', 'success');
         } catch (error) {
-          console.error('Erro ao processar arquivo:', error);
+            console.error('❌ Error initializing app:', error);
+            this.showStatus('Error al inicializar', 'error');
         }
-      }
-
-      forms.renderModalPhotos();
-      fileInput.value = ''; // Reset input
-    });
-
-    // Confirmar fotos
-    confirmBtn.addEventListener('click', () => {
-      forms.confirmPhotos();
-    });
-  }
-
-  /**
-   * Configura auto-save nos campos gerais
-   */
-  setupAutoSave() {
-    const fields = [
-      'año', 'semana', 'cliente', 'albaran', 'cod-ingeniero',
-      'ubicacion', 'perfiles', 'peticiones', 'observaciones'
-    ];
-
-    fields.forEach(fieldId => {
-      const field = document.getElementById(fieldId);
-      if (field) {
-        field.addEventListener('change', () => forms.autoSave());
-        field.addEventListener('blur', () => forms.autoSave());
-      }
-    });
-  }
-
-  /**
-   * Mostra diálogo para salvar rascunho
-   */
-  showSaveDraftDialog() {
-    const name = prompt('Nombre del borrador:', `Borrador_${new Date().toLocaleDateString('es-ES')}`);
-    
-    if (!name) return;
-
-    const data = {
-      general: forms.collectGeneralData(),
-      verifications: forms.verifications,
-      observations: forms.collectObservations()
-    };
-
-    if (db.saveDraft(name, data)) {
-      forms.showStatus('Borrador guardado correctamente', 'success');
-    } else {
-      forms.showStatus('Error al guardar borrador', 'error');
-    }
-  }
-
-  /**
-   * Mostra diálogo para carregar rascunho
-   */
-  showLoadDraftDialog() {
-    const drafts = db.listDrafts();
-
-    if (drafts.length === 0) {
-      alert('No hay borradores guardados');
-      return;
     }
 
-    const modal = document.getElementById('draft-modal');
-    const listContainer = document.getElementById('draft-list');
+    async registerServiceWorker() {
+        if (!('serviceWorker' in navigator)) {
+            console.warn('⚠️ Service Worker not supported');
+            return;
+        }
 
-    // Renderizar lista de rascunhos
-    listContainer.innerHTML = drafts.map(draft => `
-      <div class="draft-item">
-        <div class="draft-info">
-          <h4>${draft.name}</h4>
-          <p>${draft.date}</p>
-        </div>
-        <div class="draft-actions">
-          <button class="btn btn-success btn-small" onclick="app.loadDraft(${draft.id})">
-            📂 Cargar
-          </button>
-          <button class="btn btn-danger btn-small" onclick="app.deleteDraft(${draft.id})">
-            🗑️ Eliminar
-          </button>
-        </div>
-      </div>
-    `).join('');
-
-    // Mostrar modal
-    modal.classList.remove('hidden');
-
-    // Fechar modal
-    modal.querySelectorAll('.modal-close').forEach(btn => {
-      btn.addEventListener('click', () => {
-        modal.classList.add('hidden');
-      });
-    });
-
-    modal.addEventListener('click', (e) => {
-      if (e.target === modal) {
-        modal.classList.add('hidden');
-      }
-    });
-  }
-
-  /**
-   * Carrega um rascunho específico
-   */
-  loadDraft(draftId) {
-    const data = db.loadDraft(draftId);
-    
-    if (!data) {
-      forms.showStatus('Error al cargar borrador', 'error');
-      return;
+        try {
+            const registration = await navigator.serviceWorker.register('/sw.js');
+            console.log('✅ Service Worker registered:', registration);
+        } catch (error) {
+            console.error('❌ Service Worker registration failed:', error);
+        }
     }
 
-    // Limpar dados atuais
-    forms.verifications = [];
-    document.getElementById('verification-sections').innerHTML = '';
+    setupEventListeners() {
+        // Save draft button
+        const saveDraftBtn = document.getElementById('save-draft');
+        if (saveDraftBtn) {
+            saveDraftBtn.addEventListener('click', () => this.saveDraft());
+        }
 
-    // Carregar dados
-    forms.populateGeneralData(data.general);
-    forms.populateObservations(data.observations);
+        // Load draft button
+        const loadDraftBtn = document.getElementById('load-draft');
+        if (loadDraftBtn) {
+            loadDraftBtn.addEventListener('click', () => this.showDraftModal());
+        }
 
-    // Carregar verificações
-    if (data.verifications) {
-      data.verifications.forEach(v => {
-        forms.verifications.push(v);
-        forms.renderVerification(v);
-      });
+        // Generate report button
+        const generateBtn = document.getElementById('generate-report');
+        if (generateBtn) {
+            generateBtn.addEventListener('click', () => this.generateReport());
+        }
+
+        // Clear all button
+        const clearBtn = document.getElementById('clear-all');
+        if (clearBtn) {
+            clearBtn.addEventListener('click', () => formsManager.clearAll());
+        }
+
+        // Listen for general form changes to auto-save
+        const generalFields = ['año', 'semana', 'cliente', 'albaran', 'cod-ingeniero', 
+                               'ubicacion', 'perfiles', 'peticiones', 'observaciones'];
+        
+        generalFields.forEach(fieldId => {
+            const element = document.getElementById(fieldId);
+            if (element) {
+                element.addEventListener('change', () => {
+                    formsManager.saveData();
+                });
+            }
+        });
     }
 
-    // Fechar modal
-    document.getElementById('draft-modal').classList.add('hidden');
+    async saveDraft() {
+        try {
+            const data = await formsManager.getReportData();
+            
+            const draftName = prompt('Nombre del borrador:', 
+                `Borrador_${new Date().toLocaleDateString('es-ES')}`);
+            
+            if (!draftName) return;
 
-    forms.showStatus('Borrador cargado correctamente', 'success');
-  }
-
-  /**
-   * Deleta um rascunho
-   */
-  deleteDraft(draftId) {
-    if (!confirm('¿Está seguro de eliminar este borrador?')) {
-      return;
+            // Save to localStorage with custom name
+            localStorage.setItem(`draft_${draftName}`, JSON.stringify(data));
+            
+            this.showStatus(`✅ Borrador "${draftName}" guardado`, 'success');
+        } catch (error) {
+            console.error('Error saving draft:', error);
+            this.showStatus('Error al guardar borrador', 'error');
+        }
     }
 
-    if (db.deleteDraft(draftId)) {
-      forms.showStatus('Borrador eliminado', 'success');
-      // Reabrir diálogo atualizado
-      document.getElementById('draft-modal').classList.add('hidden');
-      setTimeout(() => this.showLoadDraftDialog(), 300);
-    } else {
-      forms.showStatus('Error al eliminar borrador', 'error');
+    showDraftModal() {
+        // Get all drafts from localStorage
+        const drafts = [];
+        for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            if (key.startsWith('draft_')) {
+                const name = key.replace('draft_', '');
+                const data = JSON.parse(localStorage.getItem(key));
+                drafts.push({ name, data, key });
+            }
+        }
+
+        if (drafts.length === 0) {
+            alert('No hay borradores guardados');
+            return;
+        }
+
+        // Create and show modal
+        const modal = document.getElementById('draft-modal');
+        if (!modal) {
+            alert('Modal de borradores no encontrado');
+            return;
+        }
+
+        const draftList = document.getElementById('draft-list');
+        draftList.innerHTML = '';
+
+        drafts.forEach(draft => {
+            const item = document.createElement('div');
+            item.className = 'draft-item';
+            item.innerHTML = `
+                <span>${draft.name}</span>
+                <div>
+                    <button class="btn btn-secondary" onclick="app.loadDraft('${draft.key}')">
+                        Cargar
+                    </button>
+                    <button class="btn btn-danger" onclick="app.deleteDraft('${draft.key}')">
+                        Eliminar
+                    </button>
+                </div>
+            `;
+            draftList.appendChild(item);
+        });
+
+        modal.classList.remove('hidden');
+
+        // Close modal listeners
+        const closeButtons = modal.querySelectorAll('.modal-close');
+        closeButtons.forEach(btn => {
+            btn.onclick = () => modal.classList.add('hidden');
+        });
     }
-  }
+
+    loadDraft(key) {
+        try {
+            const dataStr = localStorage.getItem(key);
+            if (!dataStr) {
+                alert('Borrador no encontrado');
+                return;
+            }
+
+            const data = JSON.parse(dataStr);
+
+            // Load data into forms
+            formsManager.itemStates = data.sections || {};
+            formsManager.sectionPhotos = data.sectionPhotos || {};
+            formsManager.itemPhotos = data.itemPhotos || {};
+            
+            formsManager.populateGeneralData(data.generalData);
+            formsManager.populateObservations(data.observations);
+            formsManager.updateAllDisplays();
+
+            // Close modal
+            const modal = document.getElementById('draft-modal');
+            if (modal) modal.classList.add('hidden');
+
+            this.showStatus('✅ Borrador cargado', 'success');
+        } catch (error) {
+            console.error('Error loading draft:', error);
+            alert('Error al cargar borrador');
+        }
+    }
+
+    deleteDraft(key) {
+        if (!confirm('¿Eliminar este borrador?')) return;
+
+        localStorage.removeItem(key);
+        this.showDraftModal(); // Refresh list
+        this.showStatus('✅ Borrador eliminado', 'success');
+    }
+
+    async generateReport() {
+        try {
+            this.showStatus('Generando informe...', 'info');
+
+            const data = await formsManager.getReportData();
+
+            // Validate required fields
+            if (!data.generalData.cliente) {
+                alert('Por favor, complete el campo Cliente');
+                return;
+            }
+
+            // Generate Word document
+            await reportsManager.generateReport(data);
+
+            this.showStatus('✅ Informe generado correctamente', 'success');
+        } catch (error) {
+            console.error('Error generating report:', error);
+            this.showStatus('Error al generar informe: ' + error.message, 'error');
+        }
+    }
+
+    showStatus(message, type = 'info') {
+        const statusEl = document.getElementById('status');
+        if (!statusEl) return;
+
+        statusEl.textContent = message;
+        statusEl.className = `status status-${type}`;
+        statusEl.style.display = 'block';
+
+        // Auto-hide after 5 seconds
+        setTimeout(() => {
+            statusEl.style.display = 'none';
+        }, 5000);
+    }
 }
 
-// Inicializar app quando DOM estiver pronto
+// Initialize app
 const app = new App();
 
-document.addEventListener('DOMContentLoaded', () => {
-  app.init();
-});
+// Make app available globally for inline onclick handlers
+window.app = app;
+
+console.log('📱 ReportManager PWA - GenReport Structure');
+console.log('✓ 6 sections predefined');
+console.log('✓ 64 items total');
+console.log('✓ State selection modal');
+console.log('✓ 2 photos per item support');
