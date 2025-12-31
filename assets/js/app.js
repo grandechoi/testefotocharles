@@ -115,12 +115,13 @@ class App {
             // Convert to JSON and check size
             const dataStr = JSON.stringify(data);
             const sizeKB = Math.round(dataStr.length / 1024);
+            const sizeMB = (sizeKB / 1024).toFixed(2);
             
-            console.log(`📦 Borrador size: ${sizeKB} KB`);
+            console.log(`📦 Borrador size: ${sizeKB} KB (${sizeMB} MB)`);
             
-            // Warn if data is very large (>2MB)
-            if (dataStr.length > 2 * 1024 * 1024) {
-                if (!confirm(`El borrador es muy grande (${sizeKB} KB). Esto puede causar problemas. ¿Continuar?`)) {
+            // Warn if data is extremely large (>500MB)
+            if (dataStr.length > 500 * 1024 * 1024) {
+                if (!confirm(`El borrador es muy grande (${sizeMB} MB). Esto puede causar lentitud. ¿Continuar?`)) {
                     return;
                 }
             }
@@ -128,15 +129,18 @@ class App {
             // Try to save to localStorage
             try {
                 localStorage.setItem(`draft_${safeName}`, dataStr);
-                this.showStatus(`✅ Borrador "${safeName}" guardado (${sizeKB} KB)`, 'success');
+                const displaySize = sizeMB >= 1 ? `${sizeMB} MB` : `${sizeKB} KB`;
+                this.showStatus(`✅ Borrador "${safeName}" guardado (${displaySize})`, 'success');
             } catch (storageError) {
                 // Handle localStorage quota exceeded
                 if (storageError.name === 'QuotaExceededError') {
+                    const displaySize = sizeMB >= 1 ? `${sizeMB} MB` : `${sizeKB} KB`;
                     alert('❌ Espacio insuficiente en el navegador.\n\n' +
                           'Intente:\n' +
                           '• Eliminar borradores antiguos\n' +
                           '• Reducir el número de fotos\n' +
-                          `• Tamaño actual: ${sizeKB} KB`);
+                          `• Tamaño del borrador: ${displaySize}\n` +
+                          `• Límite típico del navegador: ~5-10 GB`);
                     this.showStatus('Error: Espacio insuficiente', 'error');
                 } else {
                     throw storageError;
@@ -262,14 +266,15 @@ class App {
 
             const totalKB = Math.round(totalSize / 1024);
             const totalMB = (totalKB / 1024).toFixed(2);
+            const totalGB = (totalMB / 1024).toFixed(2);
 
-            // Estimate available space (typical limit is 5-10MB)
-            const estimatedLimitMB = 5;
-            const usagePercent = Math.round((totalMB / estimatedLimitMB) * 100);
+            // Estimate available space (typical limit is 5-10GB)
+            const estimatedLimitGB = 5;
+            const usagePercent = Math.round((totalGB / estimatedLimitGB) * 100);
 
             let message = `📊 Uso de Almacenamiento\n\n`;
-            message += `Total usado: ${totalKB} KB (${totalMB} MB)\n`;
-            message += `Uso estimado: ${usagePercent}% de ~${estimatedLimitMB}MB\n\n`;
+            message += `Total usado: ${totalMB} MB (${totalGB} GB)\n`;
+            message += `Uso estimado: ${usagePercent}% de ~${estimatedLimitGB}GB\n\n`;
             message += `Borradores (${items.length}):\n`;
             
             items.sort((a, b) => b.sizeKB - a.sizeKB);
