@@ -219,6 +219,9 @@ class CameraManager {
         video.srcObject = stream;
         
         // Get video track for flash control
+        const track = stream.getVideoTracks()[0];
+        const capabilities = track.getCapabilities();
+        const hasFlash = capabilities.torch;
         
         // Show flash button if supported
         if (hasFlash) {
@@ -238,9 +241,6 @@ class CameraManager {
             }
           };
         }
-        const track = stream.getVideoTracks()[0];
-        const capabilities = track.getCapabilities();
-        const hasFlash = capabilities.torch;
 
         // Capture button
         btnCapture.onclick = () => {
