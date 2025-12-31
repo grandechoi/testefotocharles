@@ -341,30 +341,48 @@ class App {
             // Set canvas size
             const resizeCanvas = () => {
                 const container = canvas.parentElement;
-                canvas.width = container.clientWidth - 20;
-                canvas.height = 200;
+                const width = container.clientWidth - 20;
+                const height = 200;
+                
+                // Salvar imagem antes de redimensionar
+                const imageData = canvas.width > 0 ? ctx.getImageData(0, 0, canvas.width, canvas.height) : null;
+                
+                canvas.width = width;
+                canvas.height = height;
+                
+                // Restaurar imagem após redimensionar
+                if (imageData) {
+                    ctx.putImageData(imageData, 0, 0);
+                }
             };
 
             resizeCanvas();
             window.addEventListener('resize', resizeCanvas);
 
             // Drawing functions
-            const startDrawing = (e) => {
-                isDrawing = true;
+            const getCoordinates = (e) => {
                 const rect = canvas.getBoundingClientRect();
                 const touch = e.touches ? e.touches[0] : e;
-                lastX = touch.clientX - rect.left;
-                lastY = touch.clientY - rect.top;
+                return {
+                    x: (touch.clientX - rect.left) * (canvas.width / rect.width),
+                    y: (touch.clientY - rect.top) * (canvas.height / rect.height)
+                };
+            };
+
+            const startDrawing = (e) => {
+                isDrawing = true;
+                const coords = getCoordinates(e);
+                lastX = coords.x;
+                lastY = coords.y;
             };
 
             const draw = (e) => {
                 if (!isDrawing) return;
                 e.preventDefault();
 
-                const rect = canvas.getBoundingClientRect();
-                const touch = e.touches ? e.touches[0] : e;
-                const x = touch.clientX - rect.left;
-                const y = touch.clientY - rect.top;
+                const coords = getCoordinates(e);
+                const x = coords.x;
+                const y = coords.y;
 
                 ctx.strokeStyle = '#000';
                 ctx.lineWidth = 2;
