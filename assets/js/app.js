@@ -718,7 +718,7 @@ class App {
     }
     
     openAccionPhoto(accionId, campo) {
-        cameraManager.open(null, null, (photo) => {
+        this.openPhotoModal((photo) => {
             const accion = this.accionesCorrectivas.find(a => a.id === accionId);
             if (accion) {
                 if (!accion.photos) accion.photos = {};
@@ -789,7 +789,7 @@ class App {
     }
     
     openGeneralPhoto(campo) {
-        cameraManager.open(null, null, (photo) => {
+        this.openPhotoModal((photo) => {
             if (!this.generalPhotos) this.generalPhotos = {};
             if (!this.generalPhotos[campo]) this.generalPhotos[campo] = [];
             this.generalPhotos[campo].push({
@@ -798,6 +798,7 @@ class App {
             });
             this.renderGeneralPhotos(campo);
         });
+    }
     }
     
     renderGeneralPhotos(campo) {
@@ -886,6 +887,103 @@ class App {
             container.innerHTML = '';
             this.accionesCorrectivas.forEach(a => this.renderAccionCorrectiva(a));
         }
+    }
+    
+    openPhotoModal(onPhotoSelected) {
+        const modal = document.createElement('div');
+        modal.className = 'photo-selector-modal';
+        modal.innerHTML = `
+            <div class="photo-selector-content">
+                <div class="photo-selector-header">
+                    <h3>📷 Seleccionar Foto</h3>
+                    <button class="btn-close-photo-modal">✕</button>
+                </div>
+                <div class="photo-selector-body">
+                    <div class="photo-preview-area" id="photo-preview-area-app">
+                        <p>Arrastra una imagen aquí o selecciona una opción abajo</p>
+                    </div>
+                    <div class="photo-actions">
+                        <label class="btn-photo-action btn-file-input">
+                            📁 Buscar Archivo
+                            <input type="file" accept="image/*" style="display:none" id="file-input-photo-app">
+                        </label>
+                        <button class="btn-photo-action btn-open-camera-app">
+                            📷 Abrir Cámara
+                        </button>
+                    </div>
+                    <button class="btn-confirm-photo-app" style="display:none">
+                        ✓ Confirmar Foto
+                    </button>
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(modal);
+
+        let selectedPhoto = null;
+
+        const previewArea = modal.querySelector('#photo-preview-area-app');
+        const btnConfirm = modal.querySelector('.btn-confirm-photo-app');
+        const fileInput = modal.querySelector('#file-input-photo-app');
+        const btnCamera = modal.querySelector('.btn-open-camera-app');
+        const btnClose = modal.querySelector('.btn-close-photo-modal');
+
+        // File input
+        fileInput.addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                const dataUrl = await this.fileToDataUrl(file);
+                selectedPhoto = { dataUrl, timestamp: Date.now() };
+                previewArea.innerHTML = `
+                    <img src="${dataUrl}" alt="Preview" style="max-width: 100%; max-height: 300px; border-radius: 8px;">
+                    <p style="margin-top: 10px; font-size: 0.9rem; color: #4CAF50;">✓ Imagen cargada</p>
+                `;
+                btnConfirm.style.display = 'block';
+            }
+        });
+
+        // Camera button
+        btnCamera.addEventListener('click', () => {
+            modal.style.display = 'none';
+            formsManager.openCameraModal((photo) => {
+                selectedPhoto = photo;
+                previewArea.innerHTML = `
+                    <img src="${photo.dataUrl}" alt="Preview" style="max-width: 100%; max-height: 300px; border-radius: 8px;">
+                    <p style="margin-top: 10px; font-size: 0.9rem; color: #4CAF50;">✓ Imagen cargada</p>
+                `;
+                btnConfirm.style.display = 'block';
+                modal.style.display = 'flex';
+            });
+        });
+
+        // Confirm button
+        btnConfirm.addEventListener('click', () => {
+            if (selectedPhoto && onPhotoSelected) {
+                onPhotoSelected(selectedPhoto);
+                document.body.removeChild(modal);
+            }
+        });
+
+        // Close button
+        btnClose.addEventListener('click', () => {
+            document.body.removeChild(modal);
+        });
+
+        // Close on overlay
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                document.body.removeChild(modal);
+            }
+        });
+    }
+    
+    fileToDataUrl(file) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = (e) => resolve(e.target.result);
+            reader.onerror = reject;
+            reader.readAsDataURL(file);
+        });
     }
     
     toggleCollapse(header) {

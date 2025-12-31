@@ -505,17 +505,90 @@ class FormsManager {
      * Opens photo selector for item
      */
     openItemPhotoSelector(secao, item) {
-        cameraManager.open(null, null, async (photo) => {
-            const key = `${secao}|${item}`;
-            if (!this.itemPhotos[key]) {
-                this.itemPhotos[key] = [];
+        const modal = document.createElement('div');
+        modal.className = 'photo-selector-modal';
+        modal.innerHTML = `
+            <div class="photo-selector-content">
+                <div class="photo-selector-header">
+                    <h3>📷 Seleccionar Foto</h3>
+                    <button class="btn-close-photo-modal">✕</button>
+                </div>
+                <div class="photo-selector-body">
+                    <div class="photo-preview-area" id="photo-preview-area-item">
+                        <p>Arrastra una imagen aquí o selecciona una opción abajo</p>
+                    </div>
+                    <div class="photo-actions">
+                        <label class="btn-photo-action btn-file-input">
+                            📁 Buscar Archivo
+                            <input type="file" accept="image/*" style="display:none" id="file-input-photo-item">
+                        </label>
+                        <button class="btn-photo-action btn-open-camera-item">
+                            📷 Abrir Cámara
+                        </button>
+                    </div>
+                    <button class="btn-confirm-photo-item" style="display:none">
+                        ✓ Confirmar Foto
+                    </button>
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(modal);
+
+        let selectedPhoto = null;
+
+        const previewArea = modal.querySelector('#photo-preview-area-item');
+        const btnConfirm = modal.querySelector('.btn-confirm-photo-item');
+        const fileInput = modal.querySelector('#file-input-photo-item');
+        const btnCamera = modal.querySelector('.btn-open-camera-item');
+        const btnClose = modal.querySelector('.btn-close-photo-modal');
+
+        // File input
+        fileInput.addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                selectedPhoto = await this.fileToPhotoObject(file);
+                await this.showPhotoPreview(file, previewArea, btnConfirm);
             }
-            this.itemPhotos[key].push({
-                dataUrl: photo.dataUrl,
-                timestamp: Date.now()
+        });
+
+        // Camera button
+        btnCamera.addEventListener('click', () => {
+            modal.style.display = 'none';
+            this.openCameraModal((photo) => {
+                selectedPhoto = photo;
+                this.showPhotoPreview(null, previewArea, btnConfirm, photo.dataUrl);
+                modal.style.display = 'flex';
             });
-            this.renderItemPhotos(secao, item);
-            this.saveData();
+        });
+
+        // Confirm button
+        btnConfirm.addEventListener('click', () => {
+            if (selectedPhoto) {
+                const key = `${secao}|${item}`;
+                if (!this.itemPhotos[key]) {
+                    this.itemPhotos[key] = [];
+                }
+                this.itemPhotos[key].push({
+                    dataUrl: selectedPhoto.dataUrl,
+                    timestamp: Date.now()
+                });
+                this.renderItemPhotos(secao, item);
+                this.saveData();
+                document.body.removeChild(modal);
+            }
+        });
+
+        // Close button
+        btnClose.addEventListener('click', () => {
+            document.body.removeChild(modal);
+        });
+
+        // Close on overlay
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                document.body.removeChild(modal);
+            }
         });
     }
 
