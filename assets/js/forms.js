@@ -761,7 +761,33 @@ class FormsManager {
             if (element) element.value = '';
         });
 
-        console.log('✅ All data cleared');
+        // **NOVO**: Limpar assinaturas
+        ['nombre-ingeniero', 'nombre-cliente-firma'].forEach(field => {
+            const element = document.getElementById(field);
+            if (element) element.value = '';
+        });
+        
+        // Limpar canvas de assinaturas
+        ['signature-ingeniero', 'signature-cliente'].forEach(canvasId => {
+            const canvas = document.getElementById(canvasId);
+            if (canvas) {
+                const ctx = canvas.getContext('2d');
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+            }
+        });
+
+        // **NOVO**: Limpar tabela de horas
+        document.querySelectorAll('.hours-input, .date-input, .comment-input').forEach(input => {
+            input.value = '';
+        });
+        
+        // Resetar totais
+        ['viaje', 'normales', 'extras', 'sabados', 'feriados'].forEach(col => {
+            const totalEl = document.getElementById(`total-${col}`);
+            if (totalEl) totalEl.textContent = '0';
+        });
+
+        console.log('✅ All data cleared (including signatures and hours)');
     }
 
     /**

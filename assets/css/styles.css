@@ -1520,3 +1520,128 @@ textarea {
     max-height: 95vh;
   }
 }
+
+/* ============================================
+   HOURS TABLE (Tabela de Horas Trabalhadas)
+   ============================================ */
+.hours-table-container {
+  overflow-x: auto;
+  margin-top: 0.5rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.hours-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+  background: white;
+}
+
+.hours-table thead {
+  background: var(--primary);
+  color: white;
+}
+
+.hours-table th {
+  padding: 0.75rem 0.5rem;
+  text-align: center;
+  font-weight: 600;
+  font-size: 0.85rem;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  line-height: 1.3;
+}
+
+.hours-table tbody tr {
+  border-bottom: 1px solid var(--border);
+}
+
+.hours-table tbody tr:hover:not(.total-row) {
+  background: var(--surface);
+}
+
+.hours-table td {
+  padding: 0.5rem;
+  text-align: center;
+  border: 1px solid var(--border);
+}
+
+.hours-table td:first-child {
+  font-weight: 600;
+  background: var(--surface);
+}
+
+.hours-table input {
+  width: 100%;
+  padding: 0.4rem;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  text-align: center;
+  font-size: 0.9rem;
+}
+
+.hours-table input.date-input {
+  min-width: 120px;
+}
+
+.hours-table input.hours-input {
+  min-width: 60px;
+  max-width: 80px;
+}
+
+.hours-table input.comment-input {
+  text-align: left;
+  min-width: 150px;
+}
+
+.hours-table input:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.1);
+}
+
+.hours-table .total-row {
+  background: var(--surface);
+  font-weight: bold;
+  border-top: 2px solid var(--primary);
+}
+
+.hours-table .total-row td {
+  padding: 0.75rem;
+  font-size: 1rem;
+  color: var(--primary);
+}
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+  .hours-table {
+    font-size: 0.75rem;
+  }
+
+  .hours-table th {
+    padding: 0.5rem 0.25rem;
+    font-size: 0.7rem;
+  }
+
+  .hours-table td {
+    padding: 0.3rem;
+  }
+
+  .hours-table input {
+    padding: 0.3rem;
+    font-size: 0.8rem;
+  }
+
+  .hours-table input.date-input {
+    min-width: 100px;
+  }
+
+  .hours-table input.hours-input {
+    min-width: 50px;
+    max-width: 60px;
+  }
+
+  .hours-table input.comment-input {
+    min-width: 100px;
+  }
+}

@@ -31,6 +31,9 @@ class App {
             // Initialize camera
             await cameraManager.init();
 
+            // **NOVO**: Initialize hours table calculations
+            this.initHoursTable();
+
             // Auto-save every minute
             setInterval(() => {
                 formsManager.saveData();
@@ -438,6 +441,9 @@ class App {
 
             const data = await formsManager.getReportData();
 
+            // **NOVO**: Add hours data
+            data.hoursData = this.getHoursData();
+
             // Add signatures
             data.signatures = {
                 ingeniero: {
@@ -480,6 +486,85 @@ class App {
         setTimeout(() => {
             statusEl.style.display = 'none';
         }, 5000);
+    }
+
+    /**
+     * Initialize hours table with auto-calculation
+     */
+    initHoursTable() {
+        const hoursInputs = document.querySelectorAll('.hours-input');
+        
+        hoursInputs.forEach(input => {
+            input.addEventListener('input', () => this.calculateHoursTotals());
+        });
+
+        // Calculate on load
+        this.calculateHoursTotals();
+    }
+
+    /**
+     * Calculate totals for hours table
+     */
+    calculateHoursTotals() {
+        const columns = ['viaje', 'normales', 'extras', 'sabados', 'feriados'];
+        const totals = {};
+
+        columns.forEach(col => {
+            const inputs = document.querySelectorAll(`.hours-input[data-col="${col}"]`);
+            let sum = 0;
+            
+            inputs.forEach(input => {
+                const value = parseFloat(input.value) || 0;
+                sum += value;
+            });
+
+            totals[col] = sum;
+            
+            // Update total display
+            const totalEl = document.getElementById(`total-${col}`);
+            if (totalEl) {
+                totalEl.textContent = sum.toFixed(1);
+            }
+        });
+
+        return totals;
+    }
+
+    /**
+     * Get hours data from table
+     */
+    getHoursData() {
+        const days = ['LUN', 'MAR', 'MIER', 'JUE', 'VIER', 'SAB', 'DOM'];
+        const hoursData = [];
+
+        days.forEach(day => {
+            const row = document.querySelector(`tr[data-day="${day}"]`);
+            if (!row) return;
+
+            const fecha = row.querySelector('.date-input')?.value || '';
+            const viaje = parseFloat(row.querySelector('.hours-input[data-col="viaje"]')?.value) || 0;
+            const normales = parseFloat(row.querySelector('.hours-input[data-col="normales"]')?.value) || 0;
+            const extras = parseFloat(row.querySelector('.hours-input[data-col="extras"]')?.value) || 0;
+            const sabados = parseFloat(row.querySelector('.hours-input[data-col="sabados"]')?.value) || 0;
+            const feriados = parseFloat(row.querySelector('.hours-input[data-col="feriados"]')?.value) || 0;
+            const comentarios = row.querySelector('.comment-input')?.value || '';
+
+            hoursData.push({
+                day,
+                fecha,
+                viaje,
+                normales,
+                extras,
+                sabados,
+                feriados,
+                comentarios
+            });
+        });
+
+        return {
+            rows: hoursData,
+            totals: this.calculateHoursTotals()
+        };
     }
 }
 

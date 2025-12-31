@@ -57,6 +57,30 @@ export const TOPICOS_INSPECAO = {
     ]
 };
 
+// ===============================================
+// MAPEAMENTO DE REPUESTOS (do Python GenReport)
+// ===============================================
+export const MAPEAMENTO_REPUESTOS = {
+    "Ventanas de medición de los Sensores SUPERIOR": { nome: "Ventanas Sensor Superior", codigo: "VEN-SUP-001" },
+    "Ventanas de medición de los Sensores INFERIOR": { nome: "Ventanas Sensor Inferior", codigo: "VEN-INF-001" },
+    "Estado del líquido de refrigeración del depósito": { nome: "Líquido de Refrigeración", codigo: "LIQ-REF-001" },
+    "Portacables (Cable Track) SUPERIOR": { nome: "Portacables Superior", codigo: "POR-SUP-001" },
+    "Portacables (Cable Track) INFERIOR": { nome: "Portacables Inferior", codigo: "POR-INF-001" },
+    "Filtro de agua de refrigeración": { nome: "Filtro de Agua", codigo: "FIL-AGU-001" },
+    "Tamice de Lodo": { nome: "Tamice de Lodo", codigo: "TAM-LOD-001" },
+    "Rodamientos de plataforma SUPERIOR": { nome: "Rodamientos Superior", codigo: "ROD-SUP-001" },
+    "Rodamientos de plataforma INFERIOR": { nome: "Rodamientos Inferior", codigo: "ROD-INF-001" },
+    "Motor de Transmisión": { nome: "Motor de Transmisión", codigo: "MOT-TRA-001" },
+    "Correa dentada (Timing Belt) SUPERIOR": { nome: "Correa Timing Superior", codigo: "COR-TIM-SUP" },
+    "Correa dentada (Timing Belt) INFERIOR": { nome: "Correa Timing Inferior", codigo: "COR-TIM-INF" },
+    "Correa dentada del Motor": { nome: "Correa Motor", codigo: "COR-MOT-001" },
+    "Correa de sellado (Sealing Belt) SUPERIOR": { nome: "Correa Sellado Superior", codigo: "COR-SEL-SUP" },
+    "Correa de sellado (Sealing Belt) INFERIOR": { nome: "Correa Sellado Inferior", codigo: "COR-SEL-INF" },
+    "Bombilla de Humedad": { nome: "Bombilla de Humedad", codigo: "BOM-HUM-001" },
+    "Certificado de Fuentes Radioactivas": { nome: "Certificado Fuente Radioactiva", codigo: "CER-RAD-001" },
+    "Certificado de Calibración": { nome: "Certificado de Calibración", codigo: "CER-CAL-001" }
+};
+
 // Opções de estado para cada item
 export const OPCOES_ESTADO = {
     // Sistema de refrigeración

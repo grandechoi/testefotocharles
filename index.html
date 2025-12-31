@@ -80,6 +80,108 @@
         <label for="peticiones">Peticiones del cliente</label>
         <textarea id="peticiones" rows="3" placeholder="Peticiones..."></textarea>
       </div>
+
+      <!-- Horas Trabajadas -->
+      <div class="form-field">
+        <h3 style="margin-top: 2rem; margin-bottom: 1rem;">⏱️ Horas Trabajadas</h3>
+        <div class="hours-table-container">
+          <table class="hours-table" id="hours-table">
+            <thead>
+              <tr>
+                <th>DÍAS</th>
+                <th>FECHAS</th>
+                <th>Horas de Viaje</th>
+                <th>Horas normales<br>8h00...20h00<br>(Max 8 hrs)</th>
+                <th>Horas Extras<br>20h00...8h00<br>(of&gt; 8 hrs)</th>
+                <th>Horas<br>Sabados</th>
+                <th>Horas Feriadas<br>y Domingos</th>
+                <th>Commentarios</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr data-day="LUN">
+                <td>LUN.</td>
+                <td><input type="date" class="date-input" data-day="LUN"></td>
+                <td><input type="number" class="hours-input" data-day="LUN" data-col="viaje" min="0" step="0.5"></td>
+                <td><input type="number" class="hours-input" data-day="LUN" data-col="normales" min="0" max="8" step="0.5"></td>
+                <td><input type="number" class="hours-input" data-day="LUN" data-col="extras" min="0" step="0.5"></td>
+                <td><input type="number" class="hours-input" data-day="LUN" data-col="sabados" min="0" step="0.5"></td>
+                <td><input type="number" class="hours-input" data-day="LUN" data-col="feriados" min="0" step="0.5"></td>
+                <td><input type="text" class="comment-input" data-day="LUN" placeholder="Comentarios..."></td>
+              </tr>
+              <tr data-day="MAR">
+                <td>MAR.</td>
+                <td><input type="date" class="date-input" data-day="MAR"></td>
+                <td><input type="number" class="hours-input" data-day="MAR" data-col="viaje" min="0" step="0.5"></td>
+                <td><input type="number" class="hours-input" data-day="MAR" data-col="normales" min="0" max="8" step="0.5"></td>
+                <td><input type="number" class="hours-input" data-day="MAR" data-col="extras" min="0" step="0.5"></td>
+                <td><input type="number" class="hours-input" data-day="MAR" data-col="sabados" min="0" step="0.5"></td>
+                <td><input type="number" class="hours-input" data-day="MAR" data-col="feriados" min="0" step="0.5"></td>
+                <td><input type="text" class="comment-input" data-day="MAR" placeholder="Comentarios..."></td>
+              </tr>
+              <tr data-day="MIER">
+                <td>MIER.</td>
+                <td><input type="date" class="date-input" data-day="MIER"></td>
+                <td><input type="number" class="hours-input" data-day="MIER" data-col="viaje" min="0" step="0.5"></td>
+                <td><input type="number" class="hours-input" data-day="MIER" data-col="normales" min="0" max="8" step="0.5"></td>
+                <td><input type="number" class="hours-input" data-day="MIER" data-col="extras" min="0" step="0.5"></td>
+                <td><input type="number" class="hours-input" data-day="MIER" data-col="sabados" min="0" step="0.5"></td>
+                <td><input type="number" class="hours-input" data-day="MIER" data-col="feriados" min="0" step="0.5"></td>
+                <td><input type="text" class="comment-input" data-day="MIER" placeholder="Comentarios..."></td>
+              </tr>
+              <tr data-day="JUE">
+                <td>JUE.</td>
+                <td><input type="date" class="date-input" data-day="JUE"></td>
+                <td><input type="number" class="hours-input" data-day="JUE" data-col="viaje" min="0" step="0.5"></td>
+                <td><input type="number" class="hours-input" data-day="JUE" data-col="normales" min="0" max="8" step="0.5"></td>
+                <td><input type="number" class="hours-input" data-day="JUE" data-col="extras" min="0" step="0.5"></td>
+                <td><input type="number" class="hours-input" data-day="JUE" data-col="sabados" min="0" step="0.5"></td>
+                <td><input type="number" class="hours-input" data-day="JUE" data-col="feriados" min="0" step="0.5"></td>
+                <td><input type="text" class="comment-input" data-day="JUE" placeholder="Comentarios..."></td>
+              </tr>
+              <tr data-day="VIER">
+                <td>VIER.</td>
+                <td><input type="date" class="date-input" data-day="VIER"></td>
+                <td><input type="number" class="hours-input" data-day="VIER" data-col="viaje" min="0" step="0.5"></td>
+                <td><input type="number" class="hours-input" data-day="VIER" data-col="normales" min="0" max="8" step="0.5"></td>
+                <td><input type="number" class="hours-input" data-day="VIER" data-col="extras" min="0" step="0.5"></td>
+                <td><input type="number" class="hours-input" data-day="VIER" data-col="sabados" min="0" step="0.5"></td>
+                <td><input type="number" class="hours-input" data-day="VIER" data-col="feriados" min="0" step="0.5"></td>
+                <td><input type="text" class="comment-input" data-day="VIER" placeholder="Comentarios..."></td>
+              </tr>
+              <tr data-day="SAB">
+                <td>SAB.</td>
+                <td><input type="date" class="date-input" data-day="SAB"></td>
+                <td><input type="number" class="hours-input" data-day="SAB" data-col="viaje" min="0" step="0.5"></td>
+                <td><input type="number" class="hours-input" data-day="SAB" data-col="normales" min="0" max="8" step="0.5"></td>
+                <td><input type="number" class="hours-input" data-day="SAB" data-col="extras" min="0" step="0.5"></td>
+                <td><input type="number" class="hours-input" data-day="SAB" data-col="sabados" min="0" step="0.5"></td>
+                <td><input type="number" class="hours-input" data-day="SAB" data-col="feriados" min="0" step="0.5"></td>
+                <td><input type="text" class="comment-input" data-day="SAB" placeholder="Comentarios..."></td>
+              </tr>
+              <tr data-day="DOM">
+                <td>DOM.</td>
+                <td><input type="date" class="date-input" data-day="DOM"></td>
+                <td><input type="number" class="hours-input" data-day="DOM" data-col="viaje" min="0" step="0.5"></td>
+                <td><input type="number" class="hours-input" data-day="DOM" data-col="normales" min="0" max="8" step="0.5"></td>
+                <td><input type="number" class="hours-input" data-day="DOM" data-col="extras" min="0" step="0.5"></td>
+                <td><input type="number" class="hours-input" data-day="DOM" data-col="sabados" min="0" step="0.5"></td>
+                <td><input type="number" class="hours-input" data-day="DOM" data-col="feriados" min="0" step="0.5"></td>
+                <td><input type="text" class="comment-input" data-day="DOM" placeholder="Comentarios..."></td>
+              </tr>
+              <tr class="total-row">
+                <td colspan="2"><strong>TOTAL Hrs</strong></td>
+                <td><strong id="total-viaje">0</strong></td>
+                <td><strong id="total-normales">0</strong></td>
+                <td><strong id="total-extras">0</strong></td>
+                <td><strong id="total-sabados">0</strong></td>
+                <td><strong id="total-feriados">0</strong></td>
+                <td></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
     </section>
     </div>
 
