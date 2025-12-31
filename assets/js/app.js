@@ -46,6 +46,9 @@ class App {
             // **NOVO**: Initialize acciones correctivas
             setTimeout(() => this.initAccionesCorrectivas(), 100);
 
+            // Load saved data on startup
+            await formsManager.loadData();
+
             // Auto-save every minute
             setInterval(() => {
                 formsManager.saveData();

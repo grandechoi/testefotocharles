@@ -728,7 +728,12 @@ class FormsManager {
         this.sectionPhotos = {};
         this.itemPhotos = {};
 
-        await db.delete('currentReport');
+        // Delete current report from IndexedDB
+        try {
+            await db.delete('drafts', 'currentReport');
+        } catch (error) {
+            console.log('No current report to delete');
+        }
         
         this.renderAllSections();
         

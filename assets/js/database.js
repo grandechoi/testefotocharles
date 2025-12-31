@@ -116,30 +116,25 @@ class DatabaseManager {
     });
   }
 
-  // ===== Legacy localStorage methods for backward compatibility =====
-  
-  saveCurrent(data) {
-    try {
-      localStorage.setItem('reportmanager:current', JSON.stringify(data));
-      return true;
-    } catch (error) {
-      console.error('Erro ao salvar dados atuais:', error);
-      return false;
-    }
+  /**
+   * Save data with a key (generic save for any data)
+   */
+  async save(key, data) {
+    // Use IndexedDB put with 'drafts' store and the key as name
+    return await this.put('drafts', {
+      name: key,
+      data: data,
+      timestamp: Date.now(),
+      size: JSON.stringify(data).length
+    });
   }
 
-  loadCurrent() {
-    try {
-      const data = localStorage.getItem('reportmanager:current');
-      return data ? JSON.parse(data) : null;
-    } catch (error) {
-      console.error('Erro ao carregar dados atuais:', error);
-      return null;
-    }
-  }
-
-  clearCurrent() {
-    localStorage.removeItem('reportmanager:current');
+  /**
+   * Load data by key (generic load for any data)
+   */
+  async load(key) {
+    const result = await this.get('drafts', key);
+    return result ? result.data : null;
   }
 }
 
