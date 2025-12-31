@@ -6,6 +6,13 @@
 import { formsManager } from './forms.js';
 import { cameraManager } from './camera.js';
 import { reportsManager } from './reports.js';
+import { db } from './database.js';
+
+// Expose to window for console debugging
+window.db = db;
+window.formsManager = formsManager;
+window.cameraManager = cameraManager;
+window.reportsManager = reportsManager;
 
 class App {
     constructor() {
