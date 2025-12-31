@@ -41,29 +41,40 @@ class FormsManager {
      */
     createSectionCard(secao, itens, sectionIndex) {
         const card = document.createElement('div');
-        card.className = 'section-card';
+        card.className = 'section-card collapsed';
         card.innerHTML = `
-            <div class="section-header">
+            <div class="section-header" data-section="${secao}">
                 <h3>
+                    <span class="section-toggle">▶</span>
                     <span class="section-number">${sectionIndex + 1}</span>
                     ${secao}
                 </h3>
                 <button class="btn-add-section-photo" data-section="${secao}">
-                    📷 Foto da Seção
+                    📷
                 </button>
             </div>
             <div class="section-photo-preview" data-section="${secao}" style="display: none;">
                 <img src="" alt="Foto da seção">
                 <button class="btn-remove-photo">✕</button>
             </div>
-            <div class="items-list" data-section="${secao}">
+            <div class="items-list" data-section="${secao}" style="display: none;">
                 ${itens.map((item, itemIndex) => this.createItemHTML(secao, item, itemIndex)).join('')}
             </div>
         `;
 
         // Event listeners
+        const sectionHeader = card.querySelector('.section-header');
+        sectionHeader.addEventListener('click', (e) => {
+            // Não colapsar se clicar no botão de foto
+            if (e.target.closest('.btn-add-section-photo')) return;
+            this.toggleSection(card);
+        });
+
         const btnSectionPhoto = card.querySelector('.btn-add-section-photo');
-        btnSectionPhoto.addEventListener('click', () => this.openPhotoSelector(secao, null, null));
+        btnSectionPhoto.addEventListener('click', (e) => {
+            e.stopPropagation();
+            this.openPhotoSelector(secao, null, null);
+        });
 
         // Items event listeners
         itens.forEach((item, itemIndex) => {
@@ -81,6 +92,20 @@ class FormsManager {
         });
 
         return card;
+    }
+
+    toggleSection(card) {
+        const itemsList = card.querySelector('.items-list');
+        const toggle = card.querySelector('.section-toggle');
+        const isCollapsed = card.classList.toggle('collapsed');
+        
+        if (isCollapsed) {
+            itemsList.style.display = 'none';
+            toggle.textContent = '▶';
+        } else {
+            itemsList.style.display = 'flex';
+            toggle.textContent = '▼';
+        }
     }
 
     /**

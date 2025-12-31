@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>ReportManager - Valmet QCS</title>
   <link rel="manifest" href="manifest.json">
   <link rel="stylesheet" href="assets/css/styles.css">
@@ -10,13 +10,34 @@
 <body>
   <header>
     <h1>📋 ReportManager</h1>
-    <p class="subtitle">Generador de Informes QCS - Valmet</p>
+    <p class="subtitle">Informes QCS</p>
   </header>
 
+  <!-- Tab Navigation -->
+  <nav class="tab-navigation">
+    <button class="tab-btn active" data-tab="datos">
+      <span class="tab-icon">📋</span>
+      <span class="tab-label">Datos</span>
+    </button>
+    <button class="tab-btn" data-tab="verificacion">
+      <span class="tab-icon">⚙️</span>
+      <span class="tab-label">Verificación</span>
+    </button>
+    <button class="tab-btn" data-tab="observaciones">
+      <span class="tab-icon">📝</span>
+      <span class="tab-label">Observ.</span>
+    </button>
+    <button class="tab-btn" data-tab="firmas">
+      <span class="tab-icon">✍️</span>
+      <span class="tab-label">Firmas</span>
+    </button>
+  </nav>
+
   <main>
-    <!-- Sección de Datos Generales -->
-    <section class="card">
-      <h2>📋 Datos Generales</h2>
+    <!-- Tab Content: Datos Generales -->
+    <div class="tab-content active" id="tab-datos">
+      <section class="card">
+        <h2>📋 Datos Generales</h2>
       
       <div class="form-row">
         <div class="form-field">
@@ -60,38 +81,86 @@
         <textarea id="peticiones" rows="3" placeholder="Peticiones..."></textarea>
       </div>
     </section>
+    </div>
 
-    <!-- Sección de Verificaciones -->
-    <section class="card">
-      <h2>⚙️ Verificación de Sistemas</h2>
-      <p class="subtitle">Seleccione los estados de cada elemento del sistema</p>
-      <div id="sections-container"></div>
-    </section>
+    <!-- Tab Content: Verificación -->
+    <div class="tab-content" id="tab-verificacion">
+      <section class="card">
+        <h2>⚙️ Verificación de Sistemas</h2>
+        <p class="subtitle">Seleccione los estados de cada elemento</p>
+        <div id="sections-container"></div>
+      </section>
+    </div>
 
-    <!-- Sección de Observaciones -->
-    <section class="card">
-      <h2>📝 Observaciones</h2>
-      <textarea id="observaciones" rows="5" placeholder="Observaciones adicionales..."></textarea>
-    </section>
+    <!-- Tab Content: Observaciones -->
+    <div class="tab-content" id="tab-observaciones">
+      <section class="card">
+        <h2>📝 Observaciones</h2>
+        <textarea id="observaciones" rows="5" placeholder="Observaciones adicionales..."></textarea>
+      </section>
+    </div>
 
-    <!-- Botones de Acción -->
-    <section class="actions">
-      <button type="button" id="save-draft" class="btn btn-secondary">
-        💾 Guardar Borrador
+    <!-- Tab Content: Firmas -->
+    <div class="tab-content" id="tab-firmas">
+      <section class="card">
+        <h2>✍️ Firmas Digitales</h2>
+        
+        <!-- Firma Ingeniero -->
+        <div class="signature-section">
+          <h3>Ingeniero Valmet</h3>
+          <div class="form-field">
+            <label for="nombre-ingeniero">Nombre completo</label>
+            <input type="text" id="nombre-ingeniero" placeholder="Nombre del ingeniero">
+          </div>
+          <div class="signature-pad-container">
+            <canvas id="signature-ingeniero" class="signature-canvas"></canvas>
+            <div class="signature-actions">
+              <button type="button" class="btn btn-secondary btn-small" id="clear-signature-ingeniero">
+                🗑️ Borrar
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Firma Cliente -->
+        <div class="signature-section">
+          <h3>Cliente</h3>
+          <div class="form-field">
+            <label for="nombre-cliente-firma">Nombre completo</label>
+            <input type="text" id="nombre-cliente-firma" placeholder="Nombre del cliente">
+          </div>
+          <div class="signature-pad-container">
+            <canvas id="signature-cliente" class="signature-canvas"></canvas>
+            <div class="signature-actions">
+              <button type="button" class="btn btn-secondary btn-small" id="clear-signature-cliente">
+                🗑️ Borrar
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <!-- Floating Action Button -->
+    <button type="button" id="fab-generate" class="fab" title="Generar Informe">
+      <span class="fab-icon">📄</span>
+    </button>
+
+    <!-- Bottom Action Bar -->
+    <div class="bottom-action-bar">
+      <button type="button" id="save-draft" class="btn-action">
+        💾 Guardar
       </button>
-      <button type="button" id="load-draft" class="btn btn-secondary">
-        📂 Cargar Borrador
+      <button type="button" id="load-draft" class="btn-action">
+        📂 Cargar
       </button>
-      <button type="button" id="check-storage" class="btn btn-secondary" title="Ver uso de almacenamiento">
-        💽 Almacenamiento
+      <button type="button" id="check-storage" class="btn-action">
+        💽 Espacio
       </button>
-      <button type="button" id="generate-report" class="btn btn-primary">
-        📄 Generar Informe Word
+      <button type="button" id="clear-all" class="btn-action btn-danger-outline">
+        🗑️ Limpiar
       </button>
-      <button type="button" id="clear-all" class="btn btn-danger">
-        🗑️ Borrar Todo
-      </button>
-    </section>
+    </div>
 
     <!-- Status -->
     <div id="status" role="status" aria-live="polite"></div>

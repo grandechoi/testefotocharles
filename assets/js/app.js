@@ -10,6 +10,8 @@ import { reportsManager } from './reports.js';
 class App {
     constructor() {
         this.initialized = false;
+        this.currentTab = 'datos';
+        this.signaturePads = {};
         this.init();
     }
 
@@ -22,6 +24,9 @@ class App {
 
             // Setup event listeners
             this.setupEventListeners();
+
+            // Initialize signatures
+            this.initSignatures();
 
             // Initialize camera
             await cameraManager.init();
@@ -56,6 +61,20 @@ class App {
     }
 
     setupEventListeners() {
+        // Tab navigation
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const tab = e.currentTarget.dataset.tab;
+                this.switchTab(tab);
+            });
+        });
+
+        // FAB - Generate report
+        const fabGenerate = document.getElementById('fab-generate');
+        if (fabGenerate) {
+            fabGenerate.addEventListener('click', () => this.generateReport());
+        }
+
         // Save draft button
         const saveDraftBtn = document.getElementById('save-draft');
         if (saveDraftBtn) {
@@ -293,11 +312,127 @@ class App {
         }
     }
 
+    switchTab(tabName) {
+        // Update tab buttons
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.tab === tabName);
+        });
+
+        // Update tab content
+        document.querySelectorAll('.tab-content').forEach(content => {
+            content.classList.toggle('active', content.id === `tab-${tabName}`);
+        });
+
+        this.currentTab = tabName;
+    }
+
+    initSignatures() {
+        const canvases = ['signature-ingeniero', 'signature-cliente'];
+        
+        canvases.forEach(canvasId => {
+            const canvas = document.getElementById(canvasId);
+            if (!canvas) return;
+
+            const ctx = canvas.getContext('2d');
+            let isDrawing = false;
+            let lastX = 0;
+            let lastY = 0;
+
+            // Set canvas size
+            const resizeCanvas = () => {
+                const container = canvas.parentElement;
+                canvas.width = container.clientWidth - 20;
+                canvas.height = 200;
+            };
+
+            resizeCanvas();
+            window.addEventListener('resize', resizeCanvas);
+
+            // Drawing functions
+            const startDrawing = (e) => {
+                isDrawing = true;
+                const rect = canvas.getBoundingClientRect();
+                const touch = e.touches ? e.touches[0] : e;
+                lastX = touch.clientX - rect.left;
+                lastY = touch.clientY - rect.top;
+            };
+
+            const draw = (e) => {
+                if (!isDrawing) return;
+                e.preventDefault();
+
+                const rect = canvas.getBoundingClientRect();
+                const touch = e.touches ? e.touches[0] : e;
+                const x = touch.clientX - rect.left;
+                const y = touch.clientY - rect.top;
+
+                ctx.strokeStyle = '#000';
+                ctx.lineWidth = 2;
+                ctx.lineCap = 'round';
+                ctx.lineJoin = 'round';
+
+                ctx.beginPath();
+                ctx.moveTo(lastX, lastY);
+                ctx.lineTo(x, y);
+                ctx.stroke();
+
+                lastX = x;
+                lastY = y;
+            };
+
+            const stopDrawing = () => {
+                isDrawing = false;
+            };
+
+            // Mouse events
+            canvas.addEventListener('mousedown', startDrawing);
+            canvas.addEventListener('mousemove', draw);
+            canvas.addEventListener('mouseup', stopDrawing);
+            canvas.addEventListener('mouseout', stopDrawing);
+
+            // Touch events
+            canvas.addEventListener('touchstart', startDrawing, { passive: false });
+            canvas.addEventListener('touchmove', draw, { passive: false });
+            canvas.addEventListener('touchend', stopDrawing);
+
+            // Store canvas reference
+            this.signaturePads[canvasId] = { canvas, ctx };
+
+            // Clear button
+            const clearBtn = document.getElementById(`clear-${canvasId}`);
+            if (clearBtn) {
+                clearBtn.addEventListener('click', () => {
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                });
+            }
+        });
+    }
+
+    getSignatureData(canvasId) {
+        const pad = this.signaturePads[canvasId];
+        if (!pad) return null;
+        return pad.canvas.toDataURL('image/png');
+    }
+
     async generateReport() {
         try {
             this.showStatus('Generando informe...', 'info');
 
             const data = await formsManager.getReportData();
+
+            // Add signatures
+            data.signatures = {
+                ingeniero: {
+                    nombre: document.getElementById('nombre-ingeniero')?.value || '',
+                    firma: this.getSignatureData('signature-ingeniero'),
+                    fecha: new Date().toLocaleDateString('es-ES')
+                },
+                cliente: {
+                    nombre: document.getElementById('nombre-cliente-firma')?.value || '',
+                    firma: this.getSignatureData('signature-cliente'),
+                    fecha: new Date().toLocaleDateString('es-ES')
+                }
+            };
 
             // Validate required fields
             if (!data.generalData.cliente) {
