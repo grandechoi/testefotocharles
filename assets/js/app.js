@@ -134,7 +134,7 @@ class App {
 
         // Listen for general form changes to auto-save
         const generalFields = ['año', 'semana', 'cliente', 'albaran', 'cod-ingeniero', 
-                               'ubicacion', 'perfiles', 'peticiones', 'observaciones'];
+                               'perfiles', 'peticiones', 'observaciones'];
         
         generalFields.forEach(fieldId => {
             const element = document.getElementById(fieldId);

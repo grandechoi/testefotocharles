@@ -31,6 +31,25 @@
       <section class="card">
         <h2>📋 Datos Generales</h2>
       
+      <!-- 1ª LINHA: Empresa (3/4) e Data (1/4) -->
+      <div class="form-row">
+        <div class="form-field" style="flex: 3;">
+          <label for="empresa">Empresa</label>
+          <input type="text" id="empresa" placeholder="Nombre de la empresa">
+        </div>
+        <div class="form-field" style="flex: 1;">
+          <label for="fecha-visita">Fecha de la Visita</label>
+          <input type="date" id="fecha-visita">
+        </div>
+      </div>
+
+      <!-- 2ª LINHA: Dirección -->
+      <div class="form-field">
+        <label for="direccion">Dirección</label>
+        <input type="text" id="direccion" placeholder="Dirección completa">
+      </div>
+
+      <!-- 3ª LINHA: Año - Semana - Albarán - Código Ingeniero -->
       <div class="form-row">
         <div class="form-field">
           <label for="año">Año</label>
@@ -40,19 +59,6 @@
           <label for="semana">Semana</label>
           <input type="number" id="semana" placeholder="1-52">
         </div>
-      </div>
-
-      <div class="form-field">
-        <label for="empresa">Empresa</label>
-        <input type="text" id="empresa" placeholder="Nombre de la empresa">
-      </div>
-
-      <div class="form-field">
-        <label for="direccion">Dirección</label>
-        <input type="text" id="direccion" placeholder="Dirección completa">
-      </div>
-
-      <div class="form-row">
         <div class="form-field">
           <label for="albaran">Albarán (Nº de Proyecto)</label>
           <input type="text" id="albaran" placeholder="Número de albarán">
@@ -63,21 +69,13 @@
         </div>
       </div>
 
-      <div class="form-field">
-        <label for="fecha-visita">Fecha de la Visita</label>
-        <input type="date" id="fecha-visita">
-      </div>
-
-      <div class="form-field">
-        <label for="ubicacion">Ubicación del escáner</label>
-        <textarea id="ubicacion" rows="2" placeholder="Ubicación..."></textarea>
-      </div>
-
+      <!-- 4ª LINHA: Perfiles en el aire -->
       <div class="form-field">
         <label for="perfiles">Perfiles en el aire</label>
         <textarea id="perfiles" rows="3" placeholder="Perfiles..."></textarea>
       </div>
 
+      <!-- 5ª LINHA: Peticiones del cliente -->
       <div class="form-field">
         <label for="peticiones">Peticiones del cliente</label>
         <textarea id="peticiones" rows="3" placeholder="Peticiones..."></textarea>

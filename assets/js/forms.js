@@ -554,7 +554,6 @@ class FormsManager {
             albaran: document.getElementById('albaran')?.value || '',
             codIngeniero: document.getElementById('cod-ingeniero')?.value || '',
             fechaVisita: document.getElementById('fecha-visita')?.value || '',
-            ubicacion: document.getElementById('ubicacion')?.value || '',
             perfiles: document.getElementById('perfiles')?.value || '',
             peticiones: document.getElementById('peticiones')?.value || '',
             descripcionVisita: document.getElementById('descripcion-visita')?.value || ''
@@ -575,7 +574,6 @@ class FormsManager {
             'albaran': 'albaran',
             'cod-ingeniero': 'codIngeniero',
             'fecha-visita': 'fechaVisita',
-            'ubicacion': 'ubicacion',
             'perfiles': 'perfiles',
             'peticiones': 'peticiones',
             'descripcion-visita': 'descripcionVisita'
@@ -736,7 +734,7 @@ class FormsManager {
         
         // Clear general form
         ['año', 'semana', 'empresa', 'direccion', 'albaran', 'cod-ingeniero', 'fecha-visita',
-         'ubicacion', 'perfiles', 'peticiones', 'descripcion-visita', 'observaciones'].forEach(field => {
+         'perfiles', 'peticiones', 'descripcion-visita', 'observaciones'].forEach(field => {
             const element = document.getElementById(field);
             if (element) element.value = '';
         });
