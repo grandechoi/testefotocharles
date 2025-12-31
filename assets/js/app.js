@@ -351,8 +351,9 @@ class App {
         
         // Set canvas size
         const resizeCanvas = () => {
-            const width = Math.min(800, window.innerWidth - 40);
-            const height = 400;
+            const isMobile = window.innerWidth <= 768;
+            const width = Math.min(isMobile ? 700 : 800, window.innerWidth - 40);
+            const height = isMobile ? 250 : 300;
             
             // Salvar imagem antes de redimensionar
             const imageData = this.signatureCanvas.width > 0 ? ctx.getImageData(0, 0, this.signatureCanvas.width, this.signatureCanvas.height) : null;
