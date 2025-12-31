@@ -247,16 +247,21 @@ class ReportsManager {
         await this.addRepuestosTable(documentChildren, sections);
 
         // ===== TABELA DE MANTENIMIENTO =====
-        await this.addMantenimientoTable(documentChildren, sections);
-
-        // ===== ASSINATURAS =====
-        if (signatures) {
-            await this.addSignaturesPage(documentChildren, signatures);
-        }
+        await this.addMantenimientoTable(documentChildren, sections, generalData);
 
         return new Document({
             sections: [{
-                properties: {},
+                properties: {
+                    page: {
+                        pageNumbers: {
+                            start: 1,
+                            formatType: "decimal"
+                        }
+                    }
+                },
+                footers: {
+                    default: this.createFooter()
+                },
                 children: documentChildren
             }]
         });
@@ -273,6 +278,47 @@ class ReportsManager {
             bytes[i] = binary.charCodeAt(i);
         }
         return bytes;
+    }
+
+    /**
+     * Creates footer with company information
+     */
+    createFooter() {
+        const { Footer, Paragraph, TextRun, AlignmentType } = this.docx;
+        
+        return new Footer({
+            children: [
+                new Paragraph({
+                    children: [
+                        new TextRun({
+                            text: "© Valmet 2025",
+                            size: 16
+                        })
+                    ],
+                    alignment: AlignmentType.CENTER,
+                    spacing: { before: 100, after: 50 }
+                }),
+                new Paragraph({
+                    children: [
+                        new TextRun({
+                            text: "Valmet Technologies S. A. U. - Polígono Malpica calle A nº16, CP 50016 Zaragoza, Spain - Tel +34 91 484 12 26  Fax +34 91 662 60 50",
+                            size: 14
+                        })
+                    ],
+                    alignment: AlignmentType.CENTER,
+                    spacing: { after: 50 }
+                }),
+                new Paragraph({
+                    children: [
+                        new TextRun({
+                            text: "www.valmet.com – CIF A28318334 – IBAN: FI6816650001087083",
+                            size: 14
+                        })
+                    ],
+                    alignment: AlignmentType.CENTER
+                })
+            ]
+        });
     }
 
     /**
@@ -396,11 +442,11 @@ class ReportsManager {
     }
 
     /**
-     * Adiciona tabela de Mantenimiento (baseado no Python GenReport)
-     * 15 linhas com lógica condicional de datas
+     * Adiciona tabela de Mantenimiento (formato EXATO conforme imagem do usuário)
+     * Com cores, dados e estrutura específica
      */
-    async addMantenimientoTable(documentChildren, sections) {
-        const { Paragraph, TextRun, Table, TableRow, TableCell, WidthType } = this.docx;
+    async addMantenimientoTable(documentChildren, sections, generalData) {
+        const { Paragraph, TextRun, Table, TableRow, TableCell, WidthType, AlignmentType, ShadingType } = this.docx;
 
         documentChildren.push(
             new Paragraph({
@@ -414,163 +460,115 @@ class ReportsManager {
             })
         );
 
-        const today = new Date().toLocaleDateString('es-ES');
+        const today = new Date().toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' });
+        const cliente = generalData?.cliente || 'SW_NAVARRA';
 
-        // Função auxiliar para verificar estado de um item
-        const checkItemState = (itemName, allowedStates) => {
-            for (const [sectionName, items] of Object.entries(sections)) {
-                if (items[itemName]) {
-                    const states = items[itemName].states || [];
-                    return states.some(state => allowedStates.includes(state));
-                }
-            }
-            return false;
-        };
-
-        // 15 linhas de manutenção (conforme Python GenReport)
-        const maintenanceRows = [
-            {
-                responsabilidad: "Cliente",
-                pieza: "Ventanas de los sensores",
-                funcion: "Limpieza con agua y jabón neutro",
-                periodicidad: "Diária",
-                condition: () => checkItemState("Ventanas de medición de los Sensores SUPERIOR", ["Limpieza", "Buen estado"]) ||
-                                 checkItemState("Ventanas de medición de los Sensores INFERIOR", ["Limpieza", "Buen estado"])
-            },
-            {
-                responsabilidad: "Cliente",
-                pieza: "Depósito del líquido de refrigeración",
-                funcion: "Comprobar nivel y rellenar si es necesario",
-                periodicidad: "Diária",
-                condition: () => checkItemState("Estado del líquido de refrigeración del depósito", ["Buen estado", "Limpieza"])
-            },
-            {
-                responsabilidad: "Cliente",
-                pieza: "Tamice de lodo",
-                funcion: "Limpieza",
-                periodicidad: "Semanal",
-                condition: () => checkItemState("Tamice de Lodo", ["Limpieza", "Buen estado"])
-            },
-            {
-                responsabilidad: "Cliente",
-                pieza: "Portacables",
-                funcion: "Inspección visual, comprobar libre de obstáculos",
-                periodicidad: "Semanal",
-                condition: () => checkItemState("Portacables (Cable Track) SUPERIOR", ["Buen estado"]) ||
-                                 checkItemState("Portacables (Cable Track) INFERIOR", ["Buen estado"])
-            },
-            {
-                responsabilidad: "Valmet",
-                pieza: "Filtro de agua de refrigeración",
-                funcion: "Cambio",
-                periodicidad: "12 meses",
-                condition: () => checkItemState("Filtro de agua de refrigeración", ["Sustituir"])
-            },
-            {
-                responsabilidad: "Valmet",
-                pieza: "Correa timing belt",
-                funcion: "Cambio",
-                periodicidad: "36 meses",
-                condition: () => checkItemState("Correa dentada (Timing Belt) SUPERIOR", ["Sustituir"]) ||
-                                 checkItemState("Correa dentada (Timing Belt) INFERIOR", ["Sustituir"])
-            },
-            {
-                responsabilidad: "Valmet",
-                pieza: "Correa sealing belt",
-                funcion: "Cambio",
-                periodicidad: "36 meses",
-                condition: () => checkItemState("Correa de sellado (Sealing Belt) SUPERIOR", ["Sustituir"]) ||
-                                 checkItemState("Correa de sellado (Sealing Belt) INFERIOR", ["Sustituir"])
-            },
-            {
-                responsabilidad: "Valmet",
-                pieza: "Correa del motor de transmisión",
-                funcion: "Cambio",
-                periodicidad: "36 meses",
-                condition: () => checkItemState("Correa dentada del Motor", ["Sustituir"])
-            },
-            {
-                responsabilidad: "Valmet",
-                pieza: "Rodamientos de las plataformas",
-                funcion: "Cambio",
-                periodicidad: "36 meses",
-                condition: () => checkItemState("Rodamientos de plataforma SUPERIOR", ["Sustituir"]) ||
-                                 checkItemState("Rodamientos de plataforma INFERIOR", ["Sustituir"])
-            },
-            {
-                responsabilidad: "Valmet",
-                pieza: "Motor de transmisión",
-                funcion: "Cambio",
-                periodicidad: "60 meses",
-                condition: () => checkItemState("Motor de Transmisión", ["Sustituir"])
-            },
-            {
-                responsabilidad: "Valmet",
-                pieza: "Bombilla de humedad",
-                funcion: "Cambio",
-                periodicidad: "60 meses",
-                condition: () => checkItemState("Bombilla de Humedad", ["Sustituir"])
-            },
-            {
-                responsabilidad: "Valmet",
-                pieza: "Tamice de lodo",
-                funcion: "Cambio",
-                periodicidad: "60 meses",
-                condition: () => checkItemState("Tamice de Lodo", ["Sustituir"])
-            },
-            {
-                responsabilidad: "Valmet",
-                pieza: "Certificado de fuentes radioactivas",
-                funcion: "Renovación",
-                periodicidad: "120 meses",
-                condition: () => checkItemState("Certificado de Fuentes Radioactivas", ["Expirado", "Renovar"])
-            },
-            {
-                responsabilidad: "Valmet",
-                pieza: "Certificado de calibración",
-                funcion: "Renovación",
-                periodicidad: "24 meses",
-                condition: () => checkItemState("Certificado de Calibración", ["Expirado", "Renovar"])
-            },
-            {
-                responsabilidad: "Valmet",
-                pieza: "Inspección general del equipo",
-                funcion: "Revisión completa",
-                periodicidad: "12 meses",
-                condition: () => true  // Sempre preenchido
-            }
+        // Estrutura EXATA conforme imagem (15 linhas de dados)
+        const maintenanceData = [
+            { resp: cliente, pieza: "Sensores", funcion: "Limpieza", period: "Semanal", escaner: today },
+            { resp: cliente, pieza: "Nivel de Agua", funcion: "Comprobar estado y rellenar agua si fuera necesario", period: "Semanal", escaner: today },
+            { resp: cliente, pieza: "Portacables", funcion: "Inspección visual", period: "Mensual", escaner: today },
+            { resp: "VALMET", pieza: "Portacables", funcion: "Inspección de la estanquidad de las tuercas de aire, cables eléctricos y mangueras de agua", period: "Trimestral", escaner: today },
+            { resp: cliente, pieza: "Bombilla de Humedad", funcion: "Sustitución de bombilla en sensor de humedad", period: "Anual", escaner: "" },
+            { resp: "VALMET", pieza: "Líquido de refrigeración", funcion: "Sustitución de líquido Refrigerante (Propilenglicol 30% agua destilada 70%)", period: "Anual", escaner: "" },
+            { resp: "VALMET", pieza: "Filtro de lodo del sistema de agua", funcion: "Limpieza de los filtros", period: "Trimestral", escaner: today },
+            { resp: "VALMET", pieza: "Filtro de aire", funcion: "Comprobar estado y sustituir el filtro de aire", period: "Anual", escaner: today },
+            { resp: "VALMET", pieza: "Plástico poroso del indicador de humedad", funcion: "Sustituir por uno nuevo el plástico poroso del interior del indicador de humedad del sistema neumático", period: "Semestral", escaner: "" },
+            { resp: "VALMET", pieza: "Bastidor de medición", funcion: "Limpie el bastidor debajo de las estructuras mediante vacío o soplador", period: "Trimestral", escaner: today },
+            { resp: "VALMET", pieza: "Rail wipers", funcion: "Sustituya las escobillas del rail", period: "Trimestral", escaner: today },
+            { resp: "VALMET", pieza: "Rodamientos del Carro", funcion: "Revisión y Engrasado", period: "Trimestral", escaner: today },
+            { resp: "VALMET", pieza: "Rodamientos del Accionamiento", funcion: "Revisión y Engrasado", period: "Semestral", escaner: today },
+            { resp: "VALMET", pieza: "Certificado de fuentes radioactivas", funcion: "Emitido según normativa vigente", period: "Anual", escaner: "" },
+            { resp: "VALMET", pieza: "Certificado de Calibración", funcion: "Realizado Conforme especificaciones Valmet", period: "Anual", escaner: "" }
         ];
 
-        // Criar tabela
+        // Header row com COR VERDE
         const tableRows = [
-            // Header
             new TableRow({
                 children: [
-                    new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Resp.", bold: true })] })] }),
-                    new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Pieza", bold: true })] })] }),
-                    new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Función", bold: true })] })] }),
-                    new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Periodicidad", bold: true })] })] }),
-                    new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Escáner", bold: true })] })] })
+                    new TableCell({
+                        children: [new Paragraph({ 
+                            children: [new TextRun({ text: "Responsabilidad", bold: true, color: "000000" })],
+                            alignment: AlignmentType.CENTER
+                        })],
+                        shading: { fill: "90EE90", type: ShadingType.CLEAR },
+                        width: { size: 15, type: WidthType.PERCENTAGE }
+                    }),
+                    new TableCell({
+                        children: [new Paragraph({ 
+                            children: [new TextRun({ text: "Pieza", bold: true, color: "000000" })],
+                            alignment: AlignmentType.CENTER
+                        })],
+                        shading: { fill: "90EE90", type: ShadingType.CLEAR },
+                        width: { size: 20, type: WidthType.PERCENTAGE }
+                    }),
+                    new TableCell({
+                        children: [new Paragraph({ 
+                            children: [new TextRun({ text: "Funcción", bold: true, color: "000000" })],
+                            alignment: AlignmentType.CENTER
+                        })],
+                        shading: { fill: "90EE90", type: ShadingType.CLEAR },
+                        width: { size: 40, type: WidthType.PERCENTAGE }
+                    }),
+                    new TableCell({
+                        children: [new Paragraph({ 
+                            children: [new TextRun({ text: "Periodicidad", bold: true, color: "000000" })],
+                            alignment: AlignmentType.CENTER
+                        })],
+                        shading: { fill: "90EE90", type: ShadingType.CLEAR },
+                        width: { size: 12, type: WidthType.PERCENTAGE }
+                    }),
+                    new TableCell({
+                        children: [new Paragraph({ 
+                            children: [new TextRun({ text: "Escáner RL.", bold: true, color: "000000" })],
+                            alignment: AlignmentType.CENTER
+                        })],
+                        shading: { fill: "90EE90", type: ShadingType.CLEAR },
+                        width: { size: 13, type: WidthType.PERCENTAGE }
+                    })
                 ]
             })
         ];
 
         // Data rows
-        for (const row of maintenanceRows) {
-            const escaner = row.condition() ? today : '';
-            
+        maintenanceData.forEach(row => {
             tableRows.push(
                 new TableRow({
                     children: [
-                        new TableCell({ children: [new Paragraph(row.responsabilidad)] }),
-                        new TableCell({ children: [new Paragraph(row.pieza)] }),
-                        new TableCell({ children: [new Paragraph(row.funcion)] }),
-                        new TableCell({ children: [new Paragraph(row.periodicidad)] }),
-                        new TableCell({ children: [new Paragraph(escaner)] })
+                        new TableCell({ 
+                            children: [new Paragraph({ 
+                                children: [new TextRun(row.resp)],
+                                alignment: AlignmentType.CENTER
+                            })]
+                        }),
+                        new TableCell({ 
+                            children: [new Paragraph({ 
+                                children: [new TextRun(row.pieza)],
+                                alignment: AlignmentType.CENTER
+                            })]
+                        }),
+                        new TableCell({ 
+                            children: [new Paragraph({ 
+                                children: [new TextRun(row.funcion)],
+                                alignment: AlignmentType.LEFT
+                            })]
+                        }),
+                        new TableCell({ 
+                            children: [new Paragraph({ 
+                                children: [new TextRun(row.period)],
+                                alignment: AlignmentType.CENTER
+                            })]
+                        }),
+                        new TableCell({ 
+                            children: [new Paragraph({ 
+                                children: [new TextRun(row.escaner)],
+                                alignment: AlignmentType.CENTER
+                            })]
+                        })
                     ]
                 })
             );
-        }
+        });
 
         documentChildren.push(
             new Table({
