@@ -926,9 +926,10 @@ class App {
         });
 
         // Camera button
-        btnCamera.addEventListener('click', () => {
+        btnCamera.addEventListener('click', async () => {
             modal.style.display = 'none';
-            formsManager.openCameraModal((photo) => {
+            try {
+                const photo = await cameraManager.takePhoto();
                 selectedPhoto = photo;
                 previewArea.innerHTML = `
                     <img src="${photo.dataUrl}" alt="Preview" style="max-width: 100%; max-height: 300px; border-radius: 8px;">
@@ -936,7 +937,12 @@ class App {
                 `;
                 btnConfirm.style.display = 'block';
                 modal.style.display = 'flex';
-            });
+            } catch (error) {
+                modal.style.display = 'flex';
+                if (error.message !== 'Captura cancelada') {
+                    alert('Error al abrir cámara: ' + error.message);
+                }
+            }
         });
 
         // Confirm button

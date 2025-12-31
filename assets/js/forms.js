@@ -416,13 +416,19 @@ class FormsManager {
         });
 
         // Camera button
-        btnCamera.addEventListener('click', () => {
+        btnCamera.addEventListener('click', async () => {
             modal.style.display = 'none';
-            this.openCameraModal((photo) => {
+            try {
+                const photo = await cameraManager.takePhoto();
                 selectedPhoto = photo;
-                this.showPhotoPreview(null, previewArea, btnConfirm, photo.dataUrl);
+                await this.showPhotoPreview(null, previewArea, btnConfirm, photo.dataUrl);
                 modal.style.display = 'flex';
-            });
+            } catch (error) {
+                modal.style.display = 'flex';
+                if (error.message !== 'Captura cancelada') {
+                    alert('Error al abrir cámara: ' + error.message);
+                }
+            }
         });
 
         // Confirm button
