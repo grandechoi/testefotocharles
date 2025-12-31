@@ -616,12 +616,15 @@ class FormsManager {
         return {
             año: document.getElementById('año')?.value || '',
             semana: document.getElementById('semana')?.value || '',
-            cliente: document.getElementById('cliente')?.value || '',
+            empresa: document.getElementById('empresa')?.value || '',
+            direccion: document.getElementById('direccion')?.value || '',
             albaran: document.getElementById('albaran')?.value || '',
             codIngeniero: document.getElementById('cod-ingeniero')?.value || '',
+            fechaVisita: document.getElementById('fecha-visita')?.value || '',
             ubicacion: document.getElementById('ubicacion')?.value || '',
             perfiles: document.getElementById('perfiles')?.value || '',
-            peticiones: document.getElementById('peticiones')?.value || ''
+            peticiones: document.getElementById('peticiones')?.value || '',
+            descripcionVisita: document.getElementById('descripcion-visita')?.value || ''
         };
     }
 
@@ -631,13 +634,24 @@ class FormsManager {
     populateGeneralData(data) {
         if (!data) return;
 
-        const fields = ['año', 'semana', 'cliente', 'albaran', 'cod-ingeniero', 
-                       'ubicacion', 'perfiles', 'peticiones'];
+        const fieldMap = {
+            'año': 'año',
+            'semana': 'semana',
+            'empresa': 'empresa',
+            'direccion': 'direccion',
+            'albaran': 'albaran',
+            'cod-ingeniero': 'codIngeniero',
+            'fecha-visita': 'fechaVisita',
+            'ubicacion': 'ubicacion',
+            'perfiles': 'perfiles',
+            'peticiones': 'peticiones',
+            'descripcion-visita': 'descripcionVisita'
+        };
         
-        fields.forEach(field => {
-            const element = document.getElementById(field);
-            if (element && data[field]) {
-                element.value = data[field];
+        Object.entries(fieldMap).forEach(([fieldId, dataKey]) => {
+            const element = document.getElementById(fieldId);
+            if (element && data[dataKey]) {
+                element.value = data[dataKey];
             }
         });
     }
@@ -670,6 +684,8 @@ class FormsManager {
                 itemStates: this.itemStates,
                 sectionPhotos: this.sectionPhotos,
                 itemPhotos: this.itemPhotos,
+                hoursData: this.collectHoursData(),
+                signatures: this.collectSignaturesData(),
                 timestamp: Date.now()
             };
 
@@ -694,6 +710,8 @@ class FormsManager {
 
             this.populateGeneralData(data.generalData);
             this.populateObservations(data.observations);
+            this.populateHoursData(data.hoursData);
+            this.populateSignaturesData(data.signatures);
             
             // Update UI
             this.updateAllDisplays();
@@ -755,8 +773,8 @@ class FormsManager {
         this.renderAllSections();
         
         // Clear general form
-        ['año', 'semana', 'cliente', 'albaran', 'cod-ingeniero', 
-         'ubicacion', 'perfiles', 'peticiones', 'observaciones'].forEach(field => {
+        ['año', 'semana', 'empresa', 'direccion', 'albaran', 'cod-ingeniero', 'fecha-visita',
+         'ubicacion', 'perfiles', 'peticiones', 'descripcion-visita', 'observaciones'].forEach(field => {
             const element = document.getElementById(field);
             if (element) element.value = '';
         });
@@ -788,6 +806,108 @@ class FormsManager {
         });
 
         console.log('✅ All data cleared (including signatures and hours)');
+    }
+
+    /**
+     * Coleta dados da tabela de horas
+     */
+    collectHoursData() {
+        const days = ['LUN', 'MAR', 'MIER', 'JUE', 'VIER', 'SAB', 'DOM'];
+        const hoursData = {};
+
+        days.forEach(day => {
+            const row = document.querySelector(`tr[data-day="${day}"]`);
+            if (!row) return;
+
+            hoursData[day] = {
+                fecha: row.querySelector('.date-input')?.value || '',
+                viaje: row.querySelector('.hours-input[data-col="viaje"]')?.value || '',
+                normales: row.querySelector('.hours-input[data-col="normales"]')?.value || '',
+                extras: row.querySelector('.hours-input[data-col="extras"]')?.value || '',
+                sabados: row.querySelector('.hours-input[data-col="sabados"]')?.value || '',
+                feriados: row.querySelector('.hours-input[data-col="feriados"]')?.value || '',
+                comentarios: row.querySelector('.comment-input')?.value || ''
+            };
+        });
+
+        return hoursData;
+    }
+
+    /**
+     * Popula tabela de horas com dados salvos
+     */
+    populateHoursData(data) {
+        if (!data) return;
+
+        const days = ['LUN', 'MAR', 'MIER', 'JUE', 'VIER', 'SAB', 'DOM'];
+
+        days.forEach(day => {
+            const dayData = data[day];
+            if (!dayData) return;
+
+            const row = document.querySelector(`tr[data-day="${day}"]`);
+            if (!row) return;
+
+            const dateInput = row.querySelector('.date-input');
+            if (dateInput) dateInput.value = dayData.fecha || '';
+
+            const viajeInput = row.querySelector('.hours-input[data-col="viaje"]');
+            if (viajeInput) viajeInput.value = dayData.viaje || '';
+
+            const normalesInput = row.querySelector('.hours-input[data-col="normales"]');
+            if (normalesInput) normalesInput.value = dayData.normales || '';
+
+            const extrasInput = row.querySelector('.hours-input[data-col="extras"]');
+            if (extrasInput) extrasInput.value = dayData.extras || '';
+
+            const sabadosInput = row.querySelector('.hours-input[data-col="sabados"]');
+            if (sabadosInput) sabadosInput.value = dayData.sabados || '';
+
+            const feriadosInput = row.querySelector('.hours-input[data-col="feriados"]');
+            if (feriadosInput) feriadosInput.value = dayData.feriados || '';
+
+            const commentInput = row.querySelector('.comment-input');
+            if (commentInput) commentInput.value = dayData.comentarios || '';
+        });
+
+        // Recalcular totais
+        if (window.app && window.app.calculateHoursTotals) {
+            window.app.calculateHoursTotals();
+        }
+    }
+
+    /**
+     * Coleta dados das assinaturas
+     */
+    collectSignaturesData() {
+        return {
+            ingeniero: {
+                nombre: document.getElementById('nombre-ingeniero')?.value || ''
+            },
+            cliente: {
+                nombre: document.getElementById('nombre-cliente-firma')?.value || ''
+            }
+        };
+    }
+
+    /**
+     * Popula dados das assinaturas
+     */
+    populateSignaturesData(data) {
+        if (!data) return;
+
+        if (data.ingeniero && data.ingeniero.nombre) {
+            const ingenieroInput = document.getElementById('nombre-ingeniero');
+            if (ingenieroInput) ingenieroInput.value = data.ingeniero.nombre;
+        }
+
+        if (data.cliente && data.cliente.nombre) {
+            const clienteInput = document.getElementById('nombre-cliente-firma');
+            if (clienteInput) clienteInput.value = data.cliente.nombre;
+        }
+
+        // Nota: Canvas de assinaturas não podem ser restaurados de PNG
+        // Apenas os nomes são salvos
     }
 
     /**

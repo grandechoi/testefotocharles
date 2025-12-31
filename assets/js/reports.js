@@ -17,9 +17,9 @@ class ReportsManager {
         try {
             const { generalData, observations, sections, sectionPhotos, itemPhotos, hoursData } = reportData;
 
-            // Validate minimum data
-            if (!generalData.cliente) {
-                throw new Error('Campo "Cliente" es obligatorio');
+            // Validate minimum data (agora é empresa ao invés de cliente)
+            if (!generalData.empresa) {
+                throw new Error('Campo "Empresa" es obligatorio');
             }
 
             // Create document
@@ -30,7 +30,7 @@ class ReportsManager {
                 sectionPhotos,
                 itemPhotos,
                 reportData.signatures,  // Assinaturas
-                hoursData  // **NOVO**: Horas trabalhadas
+                hoursData  // Horas trabalhadas
             );
 
             // Generate blob
@@ -61,7 +61,7 @@ class ReportsManager {
 
         // **NOVO**: PRIMERA PÁGINA - Tabela de Horas Trabajadas
         if (hoursData && hoursData.rows) {
-            await this.addHoursTablePage(documentChildren, hoursData, signatures);
+            await this.addHoursTablePage(documentChildren, hoursData, signatures, generalData);
             
             // Page break após horas
             documentChildren.push(
@@ -322,25 +322,23 @@ class ReportsManager {
     }
 
     /**
-     * Generates filename for report (formato baseado no Python GenReport)
-     * Formato: Año_Semana_Cliente_YYYYMMDD.docx
+     * Generates filename for report
+     * Formato: 2025_W48_NOME_CLIENTE_ALBARAN_CODIGOENGENHEIRO_QCS.docx
      */
     generateFileName(generalData) {
-        const date = new Date();
-        const dateStr = date.toISOString().split('T')[0].replace(/-/g, '');
+        const año = generalData.año || new Date().getFullYear();
+        const semana = generalData.semana || '01';
+        const empresa = generalData.empresa || 'Empresa';
+        const albaran = generalData.albaran || '000000';
+        const codIngeniero = generalData.codIngeniero || 'LAL';
         
-        const año = generalData.año || date.getFullYear();
-        const semana = generalData.semana || '';
-        const cliente = generalData.cliente || 'Cliente';
+        // Sanitize strings (substituir espaços e caracteres especiais por _)
+        const sanitizedEmpresa = empresa.toUpperCase().replace(/[^A-Z0-9]/g, '_');
+        const sanitizedAlbaran = albaran.replace(/[^A-Z0-9]/g, '_');
+        const sanitizedCodigo = codIngeniero.replace(/[^A-Z0-9]/g, '_');
         
-        // Sanitize strings
-        const sanitizedCliente = cliente.replace(/[^a-zA-Z0-9]/g, '_');
-        
-        // Construir nome: Año_Semana_Cliente_Date.docx
-        let fileName = '';
-        if (año) fileName += `${año}_`;
-        if (semana) fileName += `Sem${semana}_`;
-        fileName += `${sanitizedCliente}_${dateStr}.docx`;
+        // Formato: ANO_W##_EMPRESA_ALBARAN_CODIGO_QCS.docx
+        const fileName = `${año}_W${semana}_${sanitizedEmpresa}_${sanitizedAlbaran}_${sanitizedCodigo}_QCS.docx`;
         
         return fileName;
     }
@@ -700,22 +698,95 @@ class ReportsManager {
     }
 
     /**
-     * Adiciona primeira página com tabela de Horas Trabajadas
-     * Formato conforme imagem do usuário
+     * Adiciona primeira página com CABEÇALHO + tabela de Horas Trabajadas
+     * Formato conforme solicitação do usuário
      */
-    async addHoursTablePage(documentChildren, hoursData, signatures) {
-        const { Paragraph, TextRun, Table, TableRow, TableCell, WidthType, BorderStyle, AlignmentType, ImageRun } = this.docx;
+    async addHoursTablePage(documentChildren, hoursData, signatures, generalData) {
+        const { Paragraph, TextRun, Table, TableRow, TableCell, WidthType, AlignmentType, ImageRun, UnderlineType } = this.docx;
 
-        // Título
+        // **NOVO**: CABEÇALHO ANTES DA TABELA
         documentChildren.push(
             new Paragraph({
                 children: [new TextRun({
-                    text: "Horas Trabajadas",
+                    text: "Informe de Intervención",
                     bold: true,
-                    size: 28
+                    size: 32
                 })],
-                heading: 1,
-                spacing: { before: 200, after: 300 }
+                alignment: AlignmentType.CENTER,
+                spacing: { before: 200, after: 400 }
+            })
+        );
+
+        // EMPRESA
+        documentChildren.push(
+            new Paragraph({
+                children: [
+                    new TextRun({ text: "EMPRESA:  ", bold: true, size: 24 }),
+                    new TextRun({ text: (generalData?.empresa || 'SMURFIT WESTROCK NAVARRA').toUpperCase(), bold: true, size: 24 })
+                ],
+                spacing: { after: 200 },
+                border: {
+                    bottom: { color: "000000", space: 1, value: "single", size: 6 }
+                }
+            })
+        );
+
+        // DIRECCION
+        documentChildren.push(
+            new Paragraph({
+                children: [
+                    new TextRun({ text: "DIRECCION: ", bold: false, size: 22 }),
+                    new TextRun({ text: generalData?.direccion || 'Av. Padre Raimundo de Lumbier, s/n, 31400, Sangüesa, Navarra.', size: 22 })
+                ],
+                spacing: { after: 200 },
+                border: {
+                    bottom: { color: "000000", space: 1, value: "single", size: 6 }
+                }
+            })
+        );
+
+        // CONTACTO
+        const contacto = signatures?.cliente?.nombre || 'Santi Arandigoyen, Gorka Arina';
+        documentChildren.push(
+            new Paragraph({
+                children: [
+                    new TextRun({ text: "CONTACTO:   ", bold: false, size: 22 }),
+                    new TextRun({ text: contacto, size: 22 })
+                ],
+                spacing: { after: 200 },
+                border: {
+                    bottom: { color: "000000", space: 1, value: "single", size: 6 }
+                }
+            })
+        );
+
+        // INGENIERO
+        const ingeniero = signatures?.ingeniero?.nombre || 'Louis Charles Almeida Maciel';
+        documentChildren.push(
+            new Paragraph({
+                children: [
+                    new TextRun({ text: "INGENIERO: ", bold: false, size: 22 }),
+                    new TextRun({ text: ingeniero, size: 22 })
+                ],
+                spacing: { after: 200 },
+                border: {
+                    bottom: { color: "000000", space: 1, value: "single", size: 6 }
+                }
+            })
+        );
+
+        // Nº DE PROYECTO
+        const proyecto = generalData?.albaran || '9B5122';
+        documentChildren.push(
+            new Paragraph({
+                children: [
+                    new TextRun({ text: "Nº DE PROYECTO: ", bold: false, size: 22 }),
+                    new TextRun({ text: proyecto, size: 22 })
+                ],
+                spacing: { after: 400 },
+                border: {
+                    bottom: { color: "000000", space: 1, value: "single", size: 6 }
+                }
             })
         );
 

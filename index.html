@@ -50,20 +50,30 @@
         </div>
       </div>
 
+      <div class="form-field">
+        <label for="empresa">Empresa</label>
+        <input type="text" id="empresa" placeholder="Nombre de la empresa">
+      </div>
+
+      <div class="form-field">
+        <label for="direccion">Dirección</label>
+        <input type="text" id="direccion" placeholder="Dirección completa">
+      </div>
+
       <div class="form-row">
         <div class="form-field">
-          <label for="cliente">Cliente</label>
-          <input type="text" id="cliente" placeholder="Nombre del cliente">
+          <label for="albaran">Albarán (Nº de Proyecto)</label>
+          <input type="text" id="albaran" placeholder="Número de albarán">
         </div>
         <div class="form-field">
-          <label for="albaran">Albarán</label>
-          <input type="text" id="albaran" placeholder="Número de albarán">
+          <label for="cod-ingeniero">Código Ingeniero</label>
+          <input type="text" id="cod-ingeniero" placeholder="Código">
         </div>
       </div>
 
       <div class="form-field">
-        <label for="cod-ingeniero">Código Ingeniero</label>
-        <input type="text" id="cod-ingeniero" placeholder="Código">
+        <label for="fecha-visita">Fecha de la Visita</label>
+        <input type="date" id="fecha-visita">
       </div>
 
       <div class="form-field">
@@ -198,7 +208,14 @@
     <div class="tab-content" id="tab-observaciones">
       <section class="card">
         <h2>📝 Observaciones</h2>
-        <textarea id="observaciones" rows="5" placeholder="Observaciones adicionales..."></textarea>
+        <div class="form-field">
+          <label for="descripcion-visita">Descripción de la visita</label>
+          <textarea id="descripcion-visita" rows="4" placeholder="Descripción detallada de la visita..."></textarea>
+        </div>
+        <div class="form-field">
+          <label for="observaciones">Observaciones adicionales</label>
+          <textarea id="observaciones" rows="5" placeholder="Observaciones adicionales..."></textarea>
+        </div>
       </section>
     </div>
 
