@@ -671,24 +671,24 @@ class App {
                     <label>Descripción del Problema</label>
                     <textarea class="accion-descripcion" rows="3" 
                               onchange="app.updateAccionCorrectiva(${accion.id}, 'descripcionProblema', this.value)">${accion.descripcionProblema || ''}</textarea>
-                    <div class="item-photos">
-                        ${[1,2,3,4].map(n => `<button class="btn-item-photo" onclick="app.openAccionPhoto(${accion.id}, 'descripcion', ${n})">📷 ${n}</button>`).join('')}
+                    <div class="item-photos-gallery" data-accion="${accion.id}" data-campo="descripcion">
+                        <button class="btn-add-photo" onclick="app.openAccionPhoto(${accion.id}, 'descripcion')">📷 +</button>
                     </div>
                 </div>
                 <div class="form-field">
                     <label>Intervención</label>
                     <textarea class="accion-intervencion" rows="3" 
                               onchange="app.updateAccionCorrectiva(${accion.id}, 'intervencion', this.value)">${accion.intervencion || ''}</textarea>
-                    <div class="item-photos">
-                        ${[1,2,3,4].map(n => `<button class="btn-item-photo" onclick="app.openAccionPhoto(${accion.id}, 'intervencion', ${n})">📷 ${n}</button>`).join('')}
+                    <div class="item-photos-gallery" data-accion="${accion.id}" data-campo="intervencion">
+                        <button class="btn-add-photo" onclick="app.openAccionPhoto(${accion.id}, 'intervencion')">📷 +</button>
                     </div>
                 </div>
                 <div class="form-field">
                     <label>Resultado</label>
                     <textarea class="accion-resultado" rows="3" 
                               onchange="app.updateAccionCorrectiva(${accion.id}, 'resultado', this.value)">${accion.resultado || ''}</textarea>
-                    <div class="item-photos">
-                        ${[1,2,3,4].map(n => `<button class="btn-item-photo" onclick="app.openAccionPhoto(${accion.id}, 'resultado', ${n})">📷 ${n}</button>`).join('')}
+                    <div class="item-photos-gallery" data-accion="${accion.id}" data-campo="resultado">
+                        <button class="btn-add-photo" onclick="app.openAccionPhoto(${accion.id}, 'resultado')">📷 +</button>
                     </div>
                 </div>
             </div>
@@ -696,15 +696,10 @@ class App {
         
         container.appendChild(card);
         
-        // Update photo buttons if photos exist
+        // Render photos if exist
         if (accion.photos) {
             ['descripcion', 'intervencion', 'resultado'].forEach(campo => {
-                [1,2,3,4].forEach(n => {
-                    const key = `${accion.id}_${campo}_${n}`;
-                    if (accion.photos[key]) {
-                        this.updateAccionPhotoButton(accion.id, campo, n, accion.photos[key]);
-                    }
-                });
+                this.renderAccionPhotos(accion.id, campo);
             });
         }
     }
@@ -722,44 +717,139 @@ class App {
         }
     }
     
-    openAccionPhoto(accionId, campo, photoNum) {
-        // Use camera manager to open photo selector
-        const key = `${accionId}_${campo}_${photoNum}`;
+    openAccionPhoto(accionId, campo) {
         cameraManager.open(null, null, (photo) => {
             const accion = this.accionesCorrectivas.find(a => a.id === accionId);
             if (accion) {
                 if (!accion.photos) accion.photos = {};
-                accion.photos[key] = photo;
-                this.updateAccionPhotoButton(accionId, campo, photoNum, photo);
+                if (!accion.photos[campo]) accion.photos[campo] = [];
+                accion.photos[campo].push({
+                    dataUrl: photo.dataUrl,
+                    timestamp: Date.now()
+                });
+                this.renderAccionPhotos(accionId, campo);
             }
         });
     }
     
-    updateAccionPhotoButton(accionId, campo, photoNum, photo) {
+    renderAccionPhotos(accionId, campo) {
         const card = document.querySelector(`[data-id="${accionId}"]`);
         if (!card) return;
-        const buttons = card.querySelectorAll('.btn-item-photo');
-        const campoIndex = ['descripcion', 'intervencion', 'resultado'].indexOf(campo);
-        if (campoIndex === -1) return;
-        const btnIndex = campoIndex * 4 + (photoNum - 1);
-        const btn = buttons[btnIndex];
-        if (btn && photo) {
-            btn.classList.add('has-photo');
-            btn.style.backgroundImage = `url(${photo.dataUrl})`;
-            btn.style.backgroundSize = 'cover';
-            btn.style.backgroundPosition = 'center';
-            btn.innerHTML = `<span class="photo-badge">✓ ${photoNum}</span>`;
-        }
+        
+        const gallery = card.querySelector(`[data-accion="${accionId}"][data-campo="${campo}"]`);
+        if (!gallery) return;
+        
+        const accion = this.accionesCorrectivas.find(a => a.id === accionId);
+        if (!accion || !accion.photos || !accion.photos[campo]) return;
+        
+        const addBtn = gallery.querySelector('.btn-add-photo');
+        gallery.innerHTML = '';
+        gallery.appendChild(addBtn);
+        
+        accion.photos[campo].forEach((photo, index) => {
+            const thumb = document.createElement('div');
+            thumb.className = 'photo-thumbnail';
+            thumb.style.backgroundImage = `url(${photo.dataUrl})`;
+            thumb.onclick = () => this.viewAccionPhoto(accionId, campo, index);
+            gallery.appendChild(thumb);
+        });
     }
     
-    openGeneralPhoto(campo, photoNum) {
-        // Open camera for general sections (recomendaciones, conclusión)
-        const key = `${campo}_${photoNum}`;
+    viewAccionPhoto(accionId, campo, photoIndex) {
+        const accion = this.accionesCorrectivas.find(a => a.id === accionId);
+        if (!accion || !accion.photos || !accion.photos[campo]) return;
+        
+        const photo = accion.photos[campo][photoIndex];
+        if (!photo) return;
+        
+        const modal = document.createElement('div');
+        modal.className = 'photo-view-modal';
+        modal.innerHTML = `
+            <div class="photo-view-content">
+                <button class="btn-close-view">✕</button>
+                <img src="${photo.dataUrl}" alt="Foto">
+                <div class="photo-view-actions">
+                    <button class="btn-delete-photo">🗑️ Eliminar Foto</button>
+                </div>
+            </div>
+        `;
+        
+        document.body.appendChild(modal);
+        
+        modal.querySelector('.btn-close-view').onclick = () => document.body.removeChild(modal);
+        modal.querySelector('.btn-delete-photo').onclick = () => {
+            if (confirm('¿Eliminar esta foto?')) {
+                accion.photos[campo].splice(photoIndex, 1);
+                if (accion.photos[campo].length === 0) delete accion.photos[campo];
+                this.renderAccionPhotos(accionId, campo);
+                document.body.removeChild(modal);
+            }
+        };
+        modal.onclick = (e) => { if (e.target === modal) document.body.removeChild(modal); };
+    }
+    
+    openGeneralPhoto(campo) {
         cameraManager.open(null, null, (photo) => {
             if (!this.generalPhotos) this.generalPhotos = {};
-            this.generalPhotos[key] = photo;
-            this.updateGeneralPhotoButton(campo, photoNum, photo);
+            if (!this.generalPhotos[campo]) this.generalPhotos[campo] = [];
+            this.generalPhotos[campo].push({
+                dataUrl: photo.dataUrl,
+                timestamp: Date.now()
+            });
+            this.renderGeneralPhotos(campo);
         });
+    }
+    
+    renderGeneralPhotos(campo) {
+        const section = document.querySelector(`#${campo}`);
+        if (!section || !section.parentElement) return;
+        
+        const gallery = section.parentElement.querySelector('.item-photos-gallery');
+        if (!gallery) return;
+        
+        const addBtn = gallery.querySelector('.btn-add-photo');
+        gallery.innerHTML = '';
+        gallery.appendChild(addBtn);
+        
+        const photos = this.generalPhotos[campo] || [];
+        photos.forEach((photo, index) => {
+            const thumb = document.createElement('div');
+            thumb.className = 'photo-thumbnail';
+            thumb.style.backgroundImage = `url(${photo.dataUrl})`;
+            thumb.onclick = () => this.viewGeneralPhoto(campo, index);
+            gallery.appendChild(thumb);
+        });
+    }
+    
+    viewGeneralPhoto(campo, photoIndex) {
+        const photos = this.generalPhotos[campo] || [];
+        const photo = photos[photoIndex];
+        if (!photo) return;
+        
+        const modal = document.createElement('div');
+        modal.className = 'photo-view-modal';
+        modal.innerHTML = `
+            <div class="photo-view-content">
+                <button class="btn-close-view">✕</button>
+                <img src="${photo.dataUrl}" alt="Foto">
+                <div class="photo-view-actions">
+                    <button class="btn-delete-photo">🗑️ Eliminar Foto</button>
+                </div>
+            </div>
+        `;
+        
+        document.body.appendChild(modal);
+        
+        modal.querySelector('.btn-close-view').onclick = () => document.body.removeChild(modal);
+        modal.querySelector('.btn-delete-photo').onclick = () => {
+            if (confirm('¿Eliminar esta foto?')) {
+                this.generalPhotos[campo].splice(photoIndex, 1);
+                if (this.generalPhotos[campo].length === 0) delete this.generalPhotos[campo];
+                this.renderGeneralPhotos(campo);
+                document.body.removeChild(modal);
+            }
+        };
+        modal.onclick = (e) => { if (e.target === modal) document.body.removeChild(modal); };
     }
     
     updateGeneralPhotoButton(campo, photoNum, photo) {

@@ -13,7 +13,7 @@ class FormsManager {
         this.sectionsContainer = document.getElementById('sections-container');
         this.itemStates = {}; // { "secao|item": ["estado1", "estado2"] }
         this.sectionPhotos = {}; // { "secao": { file, dataUrl } }
-        this.itemPhotos = {}; // { "secao|item|1": { file, dataUrl }, "secao|item|2": { file, dataUrl } }
+        this.itemPhotos = {}; // Now arrays: { "secao|item": [{file, dataUrl, timestamp}, ...] }
         this.stateModal = new StateSelectorModal();
         
         this.init();
@@ -69,7 +69,12 @@ class FormsManager {
             const btnState = itemElement.querySelector('.btn-select-state');
             btnState.addEventListener('click', () => this.openStateSelector(secao, item));
 
-            // Photo buttons - listeners adicionados dinamicamente por updateItemPhotoButton
+            // Add photo button
+            const btnAddPhoto = itemElement.querySelector('.btn-add-photo');
+            btnAddPhoto.addEventListener('click', () => this.openItemPhotoSelector(secao, item));
+            
+            // Render existing photos
+            this.renderItemPhotos(secao, item);
         });
 
         return card;
@@ -109,18 +114,9 @@ class FormsManager {
                     <span class="state-text">${statesText}</span>
                     ${hasStates ? `<span class="state-count">(${states.length})</span>` : ''}
                 </button>
-                <div class="item-photos">
-                    <button class="btn-item-photo btn-item-photo-1" title="Foto 1" data-secao="${secao}" data-item="${item}" data-photo="1">
-                        📷 1
-                    </button>
-                    <button class="btn-item-photo btn-item-photo-2" title="Foto 2" data-secao="${secao}" data-item="${item}" data-photo="2">
-                        📷 2
-                    </button>
-                    <button class="btn-item-photo btn-item-photo-3" title="Foto 3" data-secao="${secao}" data-item="${item}" data-photo="3">
-                        📷 3
-                    </button>
-                    <button class="btn-item-photo btn-item-photo-4" title="Foto 4" data-secao="${secao}" data-item="${item}" data-photo="4">
-                        📷 4
+                <div class="item-photos-gallery" data-section="${secao}" data-item="${item}">
+                    <button class="btn-add-photo" title="Adicionar foto">
+                        📷 +
                     </button>
                 </div>
             </div>
@@ -425,57 +421,44 @@ class FormsManager {
     }
 
     /**
-     * Updates item photo button
+     * Renders photo gallery for an item
      */
-    updateItemPhotoButton(secao, item, photoNumber) {
+    renderItemPhotos(secao, item) {
         const itemIndex = TOPICOS_INSPECAO[secao].indexOf(item);
         const itemElement = this.sectionsContainer.querySelector(
             `[data-section="${secao}"] .item-row[data-item-index="${itemIndex}"]`
         );
 
-        if (itemElement) {
-            const btn = itemElement.querySelector(`.btn-item-photo-${photoNumber}`);
-            if (btn) {
-                const key = `${secao}|${item}|${photoNumber}`;
-                const photo = this.itemPhotos[key];
-                
-                // Remover todos os listeners antigos clonando o botão
-                const newBtn = btn.cloneNode(false);
-                btn.parentNode.replaceChild(newBtn, btn);
-                
-                if (photo) {
-                    // Tem foto - mostrar thumbnail e listener para visualizar
-                    newBtn.classList.add('has-photo');
-                    newBtn.style.backgroundImage = `url(${photo.dataUrl})`;
-                    newBtn.style.backgroundSize = 'cover';
-                    newBtn.style.backgroundPosition = 'center';
-                    newBtn.innerHTML = `<span class="photo-badge">✓ ${photoNumber}</span>`;
-                    
-                    newBtn.onclick = (e) => {
-                        e.stopPropagation();
-                        this.viewPhoto(secao, item, photoNumber);
-                    };
-                } else {
-                    // Sem foto - mostrar ícone e listener para adicionar
-                    newBtn.classList.remove('has-photo');
-                    newBtn.style.backgroundImage = '';
-                    newBtn.textContent = `📷 ${photoNumber}`;
-                    
-                    newBtn.onclick = (e) => {
-                        e.stopPropagation();
-                        this.openPhotoSelector(secao, item, photoNumber);
-                    };
-                }
-            }
-        }
+        if (!itemElement) return;
+
+        const gallery = itemElement.querySelector('.item-photos-gallery');
+        if (!gallery) return;
+
+        const key = `${secao}|${item}`;
+        const photos = this.itemPhotos[key] || [];
+
+        // Clear existing thumbnails (keep add button)
+        const addBtn = gallery.querySelector('.btn-add-photo');
+        gallery.innerHTML = '';
+        gallery.appendChild(addBtn);
+
+        // Render thumbnails
+        photos.forEach((photo, index) => {
+            const thumb = document.createElement('div');
+            thumb.className = 'photo-thumbnail';
+            thumb.style.backgroundImage = `url(${photo.dataUrl})`;
+            thumb.onclick = () => this.viewItemPhoto(secao, item, index);
+            gallery.appendChild(thumb);
+        });
     }
 
     /**
-     * Views photo in modal
+     * Views item photo in modal
      */
-    viewPhoto(secao, item, photoNumber) {
-        const key = `${secao}|${item}|${photoNumber}`;
-        const photo = this.itemPhotos[key];
+    viewItemPhoto(secao, item, photoIndex) {
+        const key = `${secao}|${item}`;
+        const photos = this.itemPhotos[key] || [];
+        const photo = photos[photoIndex];
         
         if (!photo) return;
 
@@ -487,7 +470,6 @@ class FormsManager {
                 <img src="${photo.dataUrl}" alt="Foto">
                 <div class="photo-view-actions">
                     <button class="btn-delete-photo">🗑️ Eliminar Foto</button>
-                    <button class="btn-replace-photo">🔄 Reemplazar Foto</button>
                 </div>
             </div>
         `;
@@ -500,16 +482,16 @@ class FormsManager {
 
         modal.querySelector('.btn-delete-photo').onclick = () => {
             if (confirm('¿Eliminar esta foto?')) {
-                delete this.itemPhotos[key];
-                this.updateItemPhotoButton(secao, item, photoNumber); // Atualiza para mostrar ícone sem foto
+                const key = `${secao}|${item}`;
+                const photos = this.itemPhotos[key] || [];
+                photos.splice(photoIndex, 1);
+                if (photos.length === 0) {
+                    delete this.itemPhotos[key];
+                }
+                this.renderItemPhotos(secao, item);
                 this.saveData();
                 document.body.removeChild(modal);
             }
-        };
-
-        modal.querySelector('.btn-replace-photo').onclick = () => {
-            document.body.removeChild(modal);
-            this.openPhotoSelector(secao, item, photoNumber);
         };
 
         modal.onclick = (e) => {
@@ -517,6 +499,24 @@ class FormsManager {
                 document.body.removeChild(modal);
             }
         };
+    }
+
+    /**
+     * Opens photo selector for item
+     */
+    openItemPhotoSelector(secao, item) {
+        cameraManager.open(null, null, async (photo) => {
+            const key = `${secao}|${item}`;
+            if (!this.itemPhotos[key]) {
+                this.itemPhotos[key] = [];
+            }
+            this.itemPhotos[key].push({
+                dataUrl: photo.dataUrl,
+                timestamp: Date.now()
+            });
+            this.renderItemPhotos(secao, item);
+            this.saveData();
+        });
     }
 
     /**
@@ -686,13 +686,10 @@ class FormsManager {
         // Load general photos
         if (data.generalPhotos && window.app) {
             window.app.generalPhotos = data.generalPhotos;
-            // Update buttons
+            // Render photos
             ['recomendaciones', 'conclusion'].forEach(campo => {
-                for (let i = 1; i <= 4; i++) {
-                    const key = `${campo}_${i}`;
-                    if (data.generalPhotos[key]) {
-                        window.app.updateGeneralPhotoButton(campo, i, data.generalPhotos[key]);
-                    }
+                if (data.generalPhotos[campo]) {
+                    window.app.renderGeneralPhotos(campo);
                 }
             });
         }
