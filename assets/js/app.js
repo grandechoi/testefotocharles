@@ -460,11 +460,7 @@ class App {
                 }
             };
 
-            // Validate required fields
-            if (!data.generalData.cliente) {
-                alert('Por favor, complete el campo Cliente');
-                return;
-            }
+            // SEM VALIDAÇÃO - permite gerar com tudo em branco
 
             // Generate Word document
             await reportsManager.generateReport(data);
