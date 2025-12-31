@@ -9,7 +9,7 @@ class PhotoEditor {
     this.ctx = null;
     this.image = null;
     this.isDrawing = false;
-    this.currentTool = 'pencil'; // pencil, rectangle, circle, text
+    this.currentTool = 'pencil'; // pencil, eraser, rectangle, circle, arrow, text
     this.currentColor = '#FF0000';
     this.lineWidth = 3;
     this.startX = 0;
@@ -41,11 +41,17 @@ class PhotoEditor {
               <button class="tool-btn active" data-tool="pencil" title="Dibujo Libre">
                 ✏️
               </button>
+              <button class="tool-btn" data-tool="eraser" title="Borrador">
+                🧹
+              </button>
               <button class="tool-btn" data-tool="rectangle" title="Rectángulo">
                 ▭
               </button>
               <button class="tool-btn" data-tool="circle" title="Círculo">
                 ○
+              </button>
+              <button class="tool-btn" data-tool="arrow" title="Flecha">
+                ➜
               </button>
               <button class="tool-btn" data-tool="text" title="Texto">
                 T
@@ -164,10 +170,13 @@ class PhotoEditor {
         this.canvas.addEventListener('touchend', this.stopDrawing.bind(this));
         
         // Text input
-        this.textInput.addEventListener('blur', this.finishText.bind(this));
         this.textInput.addEventListener('keydown', (e) => {
           if (e.key === 'Enter') {
+            e.preventDefault();
             this.finishText();
+          } else if (e.key === 'Escape') {
+            this.textInput.style.display = 'none';
+            this.textInput.value = '';
           }
         });
         
@@ -297,13 +306,19 @@ class PhotoEditor {
     }
     
     // Configurar contexto
-    this.ctx.strokeStyle = this.currentColor;
-    this.ctx.fillStyle = this.currentColor;
-    this.ctx.lineWidth = this.lineWidth;
+    if (this.currentTool === 'eraser') {
+      this.ctx.globalCompositeOperation = 'destination-out';
+      this.ctx.lineWidth = this.lineWidth * 3; // Borracha maior
+    } else {
+      this.ctx.globalCompositeOperation = 'source-over';
+      this.ctx.strokeStyle = this.currentColor;
+      this.ctx.fillStyle = this.currentColor;
+      this.ctx.lineWidth = this.lineWidth;
+    }
     this.ctx.lineCap = 'round';
     this.ctx.lineJoin = 'round';
     
-    if (this.currentTool === 'pencil') {
+    if (this.currentTool === 'pencil' || this.currentTool === 'eraser') {
       this.ctx.beginPath();
       this.ctx.moveTo(pos.x, pos.y);
     }
@@ -314,7 +329,7 @@ class PhotoEditor {
     
     const pos = e.type.includes('touch') ? { x: e.clientX, y: e.clientY } : this.getMousePos(e);
     
-    if (this.currentTool === 'pencil') {
+    if (this.currentTool === 'pencil' || this.currentTool === 'eraser') {
       this.ctx.lineTo(pos.x, pos.y);
       this.ctx.stroke();
     } else if (this.currentTool === 'rectangle') {
@@ -330,6 +345,10 @@ class PhotoEditor {
       this.ctx.beginPath();
       this.ctx.arc(this.startX, this.startY, radius, 0, 2 * Math.PI);
       this.ctx.stroke();
+    } else if (this.currentTool === 'arrow') {
+      // Restaurar snapshot e desenhar seta
+      this.ctx.putImageData(this.snapshot, 0, 0);
+      this.drawArrow(this.startX, this.startY, pos.x, pos.y);
     }
   }
   
@@ -347,13 +366,39 @@ class PhotoEditor {
       const canvasX = (parseFloat(this.textInput.style.left) - rect.left) * (this.canvas.width / rect.width);
       const canvasY = (parseFloat(this.textInput.style.top) - rect.top) * (this.canvas.height / rect.height);
       
-      this.ctx.font = `${this.lineWidth * 5}px Arial`;
+      this.ctx.globalCompositeOperation = 'source-over';
+      this.ctx.font = `bold ${this.lineWidth * 5}px Arial`;
       this.ctx.fillStyle = this.currentColor;
       this.ctx.fillText(text, canvasX, canvasY);
       this.saveHistory();
     }
     this.textInput.style.display = 'none';
     this.textInput.value = '';
+  }
+  
+  drawArrow(fromX, fromY, toX, toY) {
+    const headLength = 15 * (this.lineWidth / 3); // Tamanho da ponta
+    const angle = Math.atan2(toY - fromY, toX - fromX);
+    
+    // Desenhar linha
+    this.ctx.beginPath();
+    this.ctx.moveTo(fromX, fromY);
+    this.ctx.lineTo(toX, toY);
+    this.ctx.stroke();
+    
+    // Desenhar ponta da seta
+    this.ctx.beginPath();
+    this.ctx.moveTo(toX, toY);
+    this.ctx.lineTo(
+      toX - headLength * Math.cos(angle - Math.PI / 6),
+      toY - headLength * Math.sin(angle - Math.PI / 6)
+    );
+    this.ctx.moveTo(toX, toY);
+    this.ctx.lineTo(
+      toX - headLength * Math.cos(angle + Math.PI / 6),
+      toY - headLength * Math.sin(angle + Math.PI / 6)
+    );
+    this.ctx.stroke();
   }
 }
 

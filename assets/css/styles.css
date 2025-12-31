@@ -1414,35 +1414,50 @@ textarea {
 .photo-view-actions {
   display: flex;
   gap: 12px;
+  justify-content: center;
+  margin-top: 1.5rem;
 }
 
+.btn-edit-photo,
 .btn-delete-photo,
 .btn-replace-photo {
+  flex: 1;
+  max-width: 200px;
   padding: 12px 24px;
   border: none;
   border-radius: 8px;
-  font-size: 1rem;
-  font-weight: 500;
+  font-size: 16px;
+  font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.btn-edit-photo {
+  background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+  color: white;
+  box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3);
+}
+
+.btn-edit-photo:hover {
+  background: linear-gradient(135deg, #45a049 0%, #3d8b40 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(76, 175, 80, 0.4);
 }
 
 .btn-delete-photo {
-  background: #f44336;
+  background: linear-gradient(135deg, #f44336 0%, #d32f2f 100%);
   color: white;
+  box-shadow: 0 4px 15px rgba(244, 67, 54, 0.3);
 }
 
 .btn-delete-photo:hover {
-  background: #d32f2f;
-}
-
-.btn-replace-photo {
-  background: #2196F3;
-  color: white;
-}
-
-.btn-replace-photo:hover {
-  background: #1976D2;
+  background: linear-gradient(135deg, #d32f2f 0%, #b71c1c 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(244, 67, 54, 0.4);
 }
 }
 
