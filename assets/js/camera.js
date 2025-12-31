@@ -198,13 +198,13 @@ class CameraManager {
         `;
         document.body.appendChild(modal);
 
-        const video = modal.querySelector('#camera-preview-te
-        const btnFlash = modal.querySelector('#btn-flash-temp');
-        
-        let flashOn = false;mp');
+        const video = modal.querySelector('#camera-preview-temp');
         const canvas = modal.querySelector('#camera-canvas-temp');
         const btnCapture = modal.querySelector('.btn-capture');
         const btnCancel = modal.querySelector('.btn-cancel');
+        const btnFlash = modal.querySelector('#btn-flash-temp');
+        
+        let flashOn = false;
 
         // Start camera with 1x zoom and correct aspect ratio
         const stream = await navigator.mediaDevices.getUserMedia({
