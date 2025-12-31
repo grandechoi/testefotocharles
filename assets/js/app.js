@@ -527,46 +527,64 @@ class App {
         }
     }
 
-    checkStorage() {
+    async checkStorage() {
         try {
+            // Get drafts from IndexedDB
+            const drafts = await db.getAll('drafts');
+            
+            // Calculate storage usage
             let totalSize = 0;
             const items = [];
-
-            // Calculate size of each localStorage item
-            for (let i = 0; i < localStorage.length; i++) {
-                const key = localStorage.key(i);
-                const value = localStorage.getItem(key);
-                const size = value ? value.length : 0;
+            
+            drafts.forEach(draft => {
+                const size = draft.size || 0;
                 totalSize += size;
-
-                if (key.startsWith('draft_')) {
-                    items.push({
-                        name: key.replace('draft_', ''),
-                        sizeKB: Math.round(size / 1024)
-                    });
-                }
-            }
+                items.push({
+                    name: draft.name,
+                    sizeKB: Math.round(size / 1024),
+                    sizeMB: (size / 1024 / 1024).toFixed(2)
+                });
+            });
 
             const totalKB = Math.round(totalSize / 1024);
             const totalMB = (totalKB / 1024).toFixed(2);
             const totalGB = (totalMB / 1024).toFixed(2);
 
-            // Estimate available space (typical limit is 5-10GB)
-            const estimatedLimitGB = 5;
-            const usagePercent = Math.round((totalGB / estimatedLimitGB) * 100);
+            // Get real storage quota from browser
+            let quotaMessage = '';
+            if ('storage' in navigator && 'estimate' in navigator.storage) {
+                const estimate = await navigator.storage.estimate();
+                const usagePercent = ((estimate.usage / estimate.quota) * 100).toFixed(2);
+                const usageMB = (estimate.usage / 1024 / 1024).toFixed(2);
+                const quotaMB = (estimate.quota / 1024 / 1024).toFixed(2);
+                const quotaGB = (estimate.quota / 1024 / 1024 / 1024).toFixed(2);
+                
+                quotaMessage = `Total usado (navegador): ${usageMB} MB\n`;
+                quotaMessage += `Espacio disponible: ${quotaMB} MB (${quotaGB} GB)\n`;
+                quotaMessage += `Uso: ${usagePercent}%\n\n`;
+            }
 
-            let message = `📊 Uso de Almacenamiento\n\n`;
-            message += `Total usado: ${totalMB} MB (${totalGB} GB)\n`;
-            message += `Uso estimado: ${usagePercent}% de ~${estimatedLimitGB}GB\n\n`;
-            message += `Borradores (${items.length}):\n`;
+            let message = `📊 Uso de Almacenamiento IndexedDB\n\n`;
+            message += quotaMessage;
+            message += `Borradores guardados: ${drafts.length}\n`;
+            message += `Tamaño total de borradores: ${totalMB} MB (${totalGB} GB)\n\n`;
             
-            items.sort((a, b) => b.sizeKB - a.sizeKB);
-            items.forEach(item => {
-                message += `• ${item.name}: ${item.sizeKB} KB\n`;
-            });
+            if (items.length > 0) {
+                message += `Detalle de borradores:\n`;
+                items.sort((a, b) => b.sizeKB - a.sizeKB);
+                items.forEach(item => {
+                    message += `• ${item.name}: ${item.sizeMB} MB\n`;
+                });
+            } else {
+                message += `No hay borradores guardados.`;
+            }
 
-            if (usagePercent > 80) {
-                message += `\n⚠️ Almacenamiento casi lleno!\nElimina borradores antiguos.`;
+            if ('storage' in navigator && 'estimate' in navigator.storage) {
+                const estimate = await navigator.storage.estimate();
+                const usagePercent = (estimate.usage / estimate.quota) * 100;
+                if (usagePercent > 80) {
+                    message += `\n\n⚠️ Almacenamiento casi lleno (${usagePercent.toFixed(1)}%)!\nElimina borradores antiguos.`;
+                }
             }
 
             alert(message);
