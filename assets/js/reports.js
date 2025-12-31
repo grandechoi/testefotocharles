@@ -56,19 +56,6 @@ class ReportsManager {
 
         const documentChildren = [];
 
-        // **NOVO**: PRIMERA PÁGINA - Tabela de Horas Trabajadas
-        if (hoursData && hoursData.rows) {
-            await this.addHoursTablePage(documentChildren, hoursData, signatures, generalData);
-            
-            // Page break após horas
-            documentChildren.push(
-                new Paragraph({
-                    children: [],
-                    pageBreakBefore: true
-                })
-            );
-        }
-
         // Title
         documentChildren.push(
             new Paragraph({
@@ -209,14 +196,15 @@ class ReportsManager {
                     })
                 );
 
-                // Item photos (LADO A LADO - up to 4)
-                const photoKeys = [`${secao}|${item}|1`, `${secao}|${item}|2`, `${secao}|${item}|3`, `${secao}|${item}|4`];
-                const photos = [];
+                // Item photos (NEW FORMAT - array)
+                const itemKey = `${secao}|${item}`;
+                const itemPhotoArray = itemPhotos[itemKey] || [];
                 
-                for (const photoKey of photoKeys) {
-                    if (itemPhotos[photoKey] && itemPhotos[photoKey].dataUrl) {
+                if (itemPhotoArray.length > 0) {
+                    const photos = [];
+                    for (const photo of itemPhotoArray) {
                         try {
-                            const imageData = await this.dataUrlToArrayBuffer(itemPhotos[photoKey].dataUrl);
+                            const imageData = await this.dataUrlToArrayBuffer(photo.dataUrl);
                             photos.push(
                                 new ImageRun({
                                     data: imageData,
@@ -230,26 +218,109 @@ class ReportsManager {
                             console.error('Error adding item photo:', error);
                         }
                     }
-                }
 
-                // Se tem fotos, adicionar em um único parágrafo (lado a lado)
-                if (photos.length > 0) {
-                    documentChildren.push(
-                        new Paragraph({
-                            children: photos,
-                            spacing: { after: 200 }
-                        })
-                    );
+                    // Add photos side by side
+                    if (photos.length > 0) {
+                        documentChildren.push(
+                            new Paragraph({
+                                children: photos,
+                                spacing: { after: 200 }
+                            })
+                        );
+                    }
                 }
             }
         }
 
-        // Observations
-        if (observations && observations.observaciones) {
+        // ===== ACCIONES CORRECTIVAS =====
+        if (observations && observations.accionesCorrectivas && observations.accionesCorrectivas.length > 0) {
             documentChildren.push(
                 new Paragraph({
                     children: [new TextRun({
-                        text: "Observaciones",
+                        text: "Acciones Correctivas",
+                        bold: true,
+                        size: 26
+                    })],
+                    heading: HeadingLevel.HEADING_1,
+                    spacing: { before: 400, after: 200 }
+                })
+            );
+
+            for (const accion of observations.accionesCorrectivas) {
+                // Título da ação
+                documentChildren.push(
+                    new Paragraph({
+                        children: [new TextRun({
+                            text: accion.titulo || 'Acción Correctiva',
+                            bold: true,
+                            size: 24
+                        })],
+                        spacing: { before: 200, after: 100 }
+                    })
+                );
+
+                // Descripción del Problema
+                if (accion.descripcionProblema) {
+                    documentChildren.push(
+                        new Paragraph({
+                            children: [
+                                new TextRun({ text: "Descripción del Problema: ", bold: true }),
+                                new TextRun(accion.descripcionProblema)
+                            ],
+                            spacing: { after: 100 }
+                        })
+                    );
+
+                    // Fotos Descripción
+                    if (accion.photos && accion.photos.descripcion) {
+                        await this.addPhotosToDocument(documentChildren, accion.photos.descripcion);
+                    }
+                }
+
+                // Intervención
+                if (accion.intervencion) {
+                    documentChildren.push(
+                        new Paragraph({
+                            children: [
+                                new TextRun({ text: "Intervención: ", bold: true }),
+                                new TextRun(accion.intervencion)
+                            ],
+                            spacing: { after: 100 }
+                        })
+                    );
+
+                    // Fotos Intervención
+                    if (accion.photos && accion.photos.intervencion) {
+                        await this.addPhotosToDocument(documentChildren, accion.photos.intervencion);
+                    }
+                }
+
+                // Resultado
+                if (accion.resultado) {
+                    documentChildren.push(
+                        new Paragraph({
+                            children: [
+                                new TextRun({ text: "Resultado: ", bold: true }),
+                                new TextRun(accion.resultado)
+                            ],
+                            spacing: { after: 100 }
+                        })
+                    );
+
+                    // Fotos Resultado
+                    if (accion.photos && accion.photos.resultado) {
+                        await this.addPhotosToDocument(documentChildren, accion.photos.resultado);
+                    }
+                }
+            }
+        }
+
+        // ===== RECOMENDACIONES =====
+        if (observations && observations.recomendaciones) {
+            documentChildren.push(
+                new Paragraph({
+                    children: [new TextRun({
+                        text: "Recomendaciones",
                         bold: true,
                         size: 26
                     })],
@@ -260,17 +331,59 @@ class ReportsManager {
 
             documentChildren.push(
                 new Paragraph({
-                    children: [new TextRun(observations.observaciones)],
+                    children: [new TextRun(observations.recomendaciones)],
                     spacing: { after: 200 }
                 })
             );
+
+            // Fotos Recomendaciones
+            if (observations.generalPhotos && observations.generalPhotos.recomendaciones) {
+                await this.addPhotosToDocument(documentChildren, observations.generalPhotos.recomendaciones);
+            }
+        }
+
+        // ===== CONCLUSIÓN =====
+        if (observations && observations.conclusion) {
+            documentChildren.push(
+                new Paragraph({
+                    children: [new TextRun({
+                        text: "Conclusión",
+                        bold: true,
+                        size: 26
+                    })],
+                    heading: HeadingLevel.HEADING_1,
+                    spacing: { before: 400, after: 200 }
+                })
+            );
+
+            documentChildren.push(
+                new Paragraph({
+                    children: [new TextRun(observations.conclusion)],
+                    spacing: { after: 200 }
+                })
+            );
+
+            // Fotos Conclusión
+            if (observations.generalPhotos && observations.generalPhotos.conclusion) {
+                await this.addPhotosToDocument(documentChildren, observations.generalPhotos.conclusion);
+            }
         }
 
         // ===== TABELA DE REPUESTOS NECESARIOS =====
         await this.addRepuestosTable(documentChildren, sections);
 
-        // ===== TABELA DE MANTENIMIENTO =====
-        await this.addMantenimientoTable(documentChildren, sections, generalData);
+        // ===== TABELA DE MANTENIMIENTO (NO FINAL) =====
+        if (hoursData && hoursData.rows) {
+            // Page break antes da tabela
+            documentChildren.push(
+                new Paragraph({
+                    children: [],
+                    pageBreakBefore: true
+                })
+            );
+            
+            await this.addMantenimientoTable(documentChildren, sections, generalData, hoursData, signatures);
+        }
 
         return new Document({
             sections: [{
@@ -301,6 +414,42 @@ class ReportsManager {
             bytes[i] = binary.charCodeAt(i);
         }
         return bytes;
+    }
+
+    /**
+     * Adds photo array to document (side by side)
+     */
+    async addPhotosToDocument(documentChildren, photoArray) {
+        if (!photoArray || photoArray.length === 0) return;
+
+        const { Paragraph, ImageRun } = this.docx;
+        const photos = [];
+
+        for (const photo of photoArray) {
+            try {
+                const imageData = await this.dataUrlToArrayBuffer(photo.dataUrl);
+                photos.push(
+                    new ImageRun({
+                        data: imageData,
+                        transformation: {
+                            width: 180,
+                            height: 135
+                        }
+                    })
+                );
+            } catch (error) {
+                console.error('Error adding photo:', error);
+            }
+        }
+
+        if (photos.length > 0) {
+            documentChildren.push(
+                new Paragraph({
+                    children: photos,
+                    spacing: { after: 200 }
+                })
+            );
+        }
     }
 
     /**
@@ -466,9 +615,35 @@ class ReportsManager {
      * Adiciona tabela de Mantenimiento (formato EXATO conforme imagem do usuário)
      * Com cores, dados e estrutura específica
      */
-    async addMantenimientoTable(documentChildren, sections, generalData) {
+    async addMantenimientoTable(documentChildren, sections, generalData, hoursData = null, signatures = null) {
         const { Paragraph, TextRun, Table, TableRow, TableCell, WidthType, AlignmentType, ShadingType } = this.docx;
 
+        // ===== ADICIONAR TABELA DE HORAS NO TOPO =====
+        if (hoursData && hoursData.rows) {
+            documentChildren.push(
+                new Paragraph({
+                    children: [new TextRun({
+                        text: "Horas Trabajadas",
+                        bold: true,
+                        size: 26
+                    })],
+                    heading: 1,
+                    spacing: { before: 200, after: 200 }
+                })
+            );
+
+            await this.addHoursTable(documentChildren, hoursData);
+
+            // Espaço após horas
+            documentChildren.push(
+                new Paragraph({
+                    children: [],
+                    spacing: { after: 400 }
+                })
+            );
+        }
+
+        // ===== TABELA DE MANTENIMIENTO =====
         documentChildren.push(
             new Paragraph({
                 children: [new TextRun({
@@ -605,12 +780,23 @@ class ReportsManager {
                 width: { size: 100, type: WidthType.PERCENTAGE }
             })
         );
+
+        // ===== ASSINATURAS NO FINAL =====
+        if (signatures) {
+            documentChildren.push(
+                new Paragraph({
+                    children: [],
+                    spacing: { before: 600 }
+                })
+            );
+            await this.addSignaturesSection(documentChildren, signatures);
+        }
     }
 
     /**
-     * Adiciona página de assinaturas (baseado no exemplo do usuário)
+     * Adiciona assinaturas ao documento
      */
-    async addSignaturesPage(documentChildren, signatures) {
+    async addSignaturesSection(documentChildren, signatures) {
         const { Paragraph, TextRun, ImageRun } = this.docx;
 
         documentChildren.push(
