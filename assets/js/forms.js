@@ -660,16 +660,25 @@ class FormsManager {
      * Coleta observações
      */
     collectObservations() {
-        return document.getElementById('observaciones')?.value || '';
+        const descripcion = document.getElementById('descripcion-visita')?.value || '';
+        const observaciones = document.getElementById('observaciones')?.value || '';
+        return { descripcion, observaciones };
     }
 
     /**
      * Popula observações
      */
-    populateObservations(text) {
-        const element = document.getElementById('observaciones');
-        if (element) {
-            element.value = text || '';
+    populateObservations(data) {
+        if (!data) return;
+        
+        const descripcionEl = document.getElementById('descripcion-visita');
+        if (descripcionEl && data.descripcion) {
+            descripcionEl.value = data.descripcion;
+        }
+        
+        const observacionesEl = document.getElementById('observaciones');
+        if (observacionesEl && data.observaciones) {
+            observacionesEl.value = data.observaciones;
         }
     }
 

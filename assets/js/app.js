@@ -245,6 +245,8 @@ class App {
             
             formsManager.populateGeneralData(data.generalData);
             formsManager.populateObservations(data.observations);
+            formsManager.populateHoursData(data.hoursData);
+            formsManager.populateSignaturesData(data.signatures);
             formsManager.updateAllDisplays();
 
             // Close modal

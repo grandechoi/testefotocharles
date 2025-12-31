@@ -17,10 +17,7 @@ class ReportsManager {
         try {
             const { generalData, observations, sections, sectionPhotos, itemPhotos, hoursData } = reportData;
 
-            // Validate minimum data (agora é empresa ao invés de cliente)
-            if (!generalData.empresa) {
-                throw new Error('Campo "Empresa" es obligatorio');
-            }
+            // SEM VALIDAÇÃO - permite gerar com tudo em branco
 
             // Create document
             const doc = await this.createDocument(
