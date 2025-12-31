@@ -799,7 +799,6 @@ class App {
             this.renderGeneralPhotos(campo);
         });
     }
-    }
     
     renderGeneralPhotos(campo) {
         const section = document.querySelector(`#${campo}`);
@@ -851,22 +850,6 @@ class App {
             }
         };
         modal.onclick = (e) => { if (e.target === modal) document.body.removeChild(modal); };
-    }
-    
-    updateGeneralPhotoButton(campo, photoNum, photo) {
-        // Find the button in the section
-        const section = document.querySelector(`#${campo}`);
-        if (!section || !section.parentElement) return;
-        const container = section.parentElement.parentElement;
-        const buttons = container.querySelectorAll('.btn-item-photo');
-        const btn = buttons[photoNum - 1];
-        if (btn && photo) {
-            btn.classList.add('has-photo');
-            btn.style.backgroundImage = `url(${photo.dataUrl})`;
-            btn.style.backgroundSize = 'cover';
-            btn.style.backgroundPosition = 'center';
-            btn.innerHTML = `<span class="photo-badge">✓ ${photoNum}</span>`;
-        }
     }
     
     updateAccionCorrectiva(id, field, value) {
