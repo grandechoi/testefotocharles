@@ -386,14 +386,21 @@ class App {
                 localStorage.removeItem(key);
             } else {
                 // Delete from IndexedDB
-                const drafts = await db.getAll('drafts');
-                const draft = drafts.find(d => d.name === key);
-                if (draft) {
-                    await db.delete('drafts', draft.name);
-                }
+                await db.delete('drafts', key);
             }
             
-            this.showDraftModal(); // Refresh list
+            // Check if there are more drafts
+            const remainingDrafts = await db.getAll('drafts');
+            
+            if (remainingDrafts.length > 0) {
+                // Refresh list if there are more drafts
+                this.showDraftModal();
+            } else {
+                // Close modal if no more drafts
+                const modal = document.getElementById('draft-modal');
+                if (modal) modal.classList.add('hidden');
+            }
+            
             this.showStatus('✅ Borrador eliminado', 'success');
         } catch (error) {
             console.error('Error deleting draft:', error);
