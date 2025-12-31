@@ -231,12 +231,9 @@
             <label for="nombre-ingeniero">Nombre completo</label>
             <input type="text" id="nombre-ingeniero" placeholder="Nombre del ingeniero">
           </div>
-          <div class="signature-pad-container">
-            <canvas id="signature-ingeniero" class="signature-canvas"></canvas>
-            <div class="signature-actions">
-              <button type="button" class="btn btn-secondary btn-small" id="clear-signature-ingeniero">
-                🗑️ Borrar
-              </button>
+          <div class="signature-pad-container" id="signature-ingeniero-container" data-signature="ingeniero">
+            <div class="signature-placeholder">
+              ✍️ Toque aquí para firmar
             </div>
           </div>
         </div>
@@ -248,12 +245,9 @@
             <label for="nombre-cliente-firma">Nombre completo</label>
             <input type="text" id="nombre-cliente-firma" placeholder="Nombre del cliente">
           </div>
-          <div class="signature-pad-container">
-            <canvas id="signature-cliente" class="signature-canvas"></canvas>
-            <div class="signature-actions">
-              <button type="button" class="btn btn-secondary btn-small" id="clear-signature-cliente">
-                🗑️ Borrar
-              </button>
+          <div class="signature-pad-container" id="signature-cliente-container" data-signature="cliente">
+            <div class="signature-placeholder">
+              ✍️ Toque aquí para firmar
             </div>
           </div>
         </div>
@@ -284,6 +278,27 @@
     <!-- Status -->
     <div id="status" role="status" aria-live="polite"></div>
   </main>
+
+  <!-- Modal para firmar -->
+  <div id="signature-modal" class="modal hidden" role="dialog" aria-hidden="true">
+    <div class="modal-content modal-signature">
+      <div class="modal-header">
+        <h3>✍️ Firmar</h3>
+        <button type="button" class="modal-close-signature" aria-label="Cerrar">&times;</button>
+      </div>
+      <div class="modal-body">
+        <canvas id="signature-modal-canvas" class="signature-canvas-large"></canvas>
+        <div class="signature-modal-actions">
+          <button type="button" id="clear-signature-modal" class="btn btn-secondary">
+            🗑️ Borrar
+          </button>
+          <button type="button" id="save-signature-modal" class="btn btn-success">
+            ✓ Guardar Firma
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
 
   <!-- Modal para añadir fotos -->
   <div id="photo-modal" class="modal hidden" role="dialog" aria-hidden="true">

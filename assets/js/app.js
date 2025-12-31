@@ -332,109 +332,189 @@ class App {
     }
 
     initSignatures() {
-        const canvases = ['signature-ingeniero', 'signature-cliente'];
+        // Sistema de assinatura com modal
+        this.signatures = {
+            ingeniero: null,
+            cliente: null
+        };
         
-        canvases.forEach(canvasId => {
-            const canvas = document.getElementById(canvasId);
-            if (!canvas) return;
-
-            const ctx = canvas.getContext('2d');
-            let isDrawing = false;
-            let lastX = 0;
-            let lastY = 0;
-
-            // Set canvas size
-            const resizeCanvas = () => {
-                const container = canvas.parentElement;
-                const width = container.clientWidth - 20;
-                const height = 200;
-                
-                // Salvar imagem antes de redimensionar
-                const imageData = canvas.width > 0 ? ctx.getImageData(0, 0, canvas.width, canvas.height) : null;
-                
-                canvas.width = width;
-                canvas.height = height;
-                
-                // Restaurar imagem após redimensionar
-                if (imageData) {
-                    ctx.putImageData(imageData, 0, 0);
-                }
+        this.currentSignatureType = null;
+        
+        // Modal elements
+        this.signatureModal = document.getElementById('signature-modal');
+        this.signatureCanvas = document.getElementById('signature-modal-canvas');
+        const ctx = this.signatureCanvas.getContext('2d');
+        
+        let isDrawing = false;
+        let lastX = 0;
+        let lastY = 0;
+        
+        // Set canvas size
+        const resizeCanvas = () => {
+            const width = Math.min(800, window.innerWidth - 40);
+            const height = 400;
+            
+            // Salvar imagem antes de redimensionar
+            const imageData = this.signatureCanvas.width > 0 ? ctx.getImageData(0, 0, this.signatureCanvas.width, this.signatureCanvas.height) : null;
+            
+            this.signatureCanvas.width = width;
+            this.signatureCanvas.height = height;
+            
+            // Restaurar imagem após redimensionar
+            if (imageData) {
+                ctx.putImageData(imageData, 0, 0);
+            }
+        };
+        
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+        
+        // Drawing functions
+        const getCoordinates = (e) => {
+            const rect = this.signatureCanvas.getBoundingClientRect();
+            const touch = e.touches ? e.touches[0] : e;
+            return {
+                x: (touch.clientX - rect.left) * (this.signatureCanvas.width / rect.width),
+                y: (touch.clientY - rect.top) * (this.signatureCanvas.height / rect.height)
             };
-
-            resizeCanvas();
-            window.addEventListener('resize', resizeCanvas);
-
-            // Drawing functions
-            const getCoordinates = (e) => {
-                const rect = canvas.getBoundingClientRect();
-                const touch = e.touches ? e.touches[0] : e;
-                return {
-                    x: (touch.clientX - rect.left) * (canvas.width / rect.width),
-                    y: (touch.clientY - rect.top) * (canvas.height / rect.height)
-                };
-            };
-
-            const startDrawing = (e) => {
-                isDrawing = true;
-                const coords = getCoordinates(e);
-                lastX = coords.x;
-                lastY = coords.y;
-            };
-
-            const draw = (e) => {
-                if (!isDrawing) return;
-                e.preventDefault();
-
-                const coords = getCoordinates(e);
-                const x = coords.x;
-                const y = coords.y;
-
-                ctx.strokeStyle = '#000';
-                ctx.lineWidth = 2;
-                ctx.lineCap = 'round';
-                ctx.lineJoin = 'round';
-
-                ctx.beginPath();
-                ctx.moveTo(lastX, lastY);
-                ctx.lineTo(x, y);
-                ctx.stroke();
-
-                lastX = x;
-                lastY = y;
-            };
-
-            const stopDrawing = () => {
-                isDrawing = false;
-            };
-
-            // Mouse events
-            canvas.addEventListener('mousedown', startDrawing);
-            canvas.addEventListener('mousemove', draw);
-            canvas.addEventListener('mouseup', stopDrawing);
-            canvas.addEventListener('mouseout', stopDrawing);
-
-            // Touch events
-            canvas.addEventListener('touchstart', startDrawing, { passive: false });
-            canvas.addEventListener('touchmove', draw, { passive: false });
-            canvas.addEventListener('touchend', stopDrawing);
-
-            // Store canvas reference
-            this.signaturePads[canvasId] = { canvas, ctx };
-
-            // Clear button
-            const clearBtn = document.getElementById(`clear-${canvasId}`);
-            if (clearBtn) {
-                clearBtn.addEventListener('click', () => {
-                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+        };
+        
+        const startDrawing = (e) => {
+            isDrawing = true;
+            const coords = getCoordinates(e);
+            lastX = coords.x;
+            lastY = coords.y;
+        };
+        
+        const draw = (e) => {
+            if (!isDrawing) return;
+            e.preventDefault();
+            
+            const coords = getCoordinates(e);
+            const x = coords.x;
+            const y = coords.y;
+            
+            ctx.strokeStyle = '#000';
+            ctx.lineWidth = 2;
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+            
+            ctx.beginPath();
+            ctx.moveTo(lastX, lastY);
+            ctx.lineTo(x, y);
+            ctx.stroke();
+            
+            lastX = x;
+            lastY = y;
+        };
+        
+        const stopDrawing = () => {
+            isDrawing = false;
+        };
+        
+        // Canvas events
+        this.signatureCanvas.addEventListener('mousedown', startDrawing);
+        this.signatureCanvas.addEventListener('mousemove', draw);
+        this.signatureCanvas.addEventListener('mouseup', stopDrawing);
+        this.signatureCanvas.addEventListener('mouseout', stopDrawing);
+        this.signatureCanvas.addEventListener('touchstart', startDrawing, { passive: false });
+        this.signatureCanvas.addEventListener('touchmove', draw, { passive: false });
+        this.signatureCanvas.addEventListener('touchend', stopDrawing);
+        
+        // Click handlers for signature containers
+        ['ingeniero', 'cliente'].forEach(type => {
+            const container = document.getElementById(`signature-${type}-container`);
+            if (container) {
+                container.addEventListener('click', (e) => {
+                    if (!e.target.classList.contains('signature-remove-btn')) {
+                        this.openSignatureModal(type);
+                    }
                 });
             }
         });
+        
+        // Modal buttons
+        document.querySelector('.modal-close-signature')?.addEventListener('click', () => {
+            this.closeSignatureModal();
+        });
+        
+        document.getElementById('clear-signature-modal')?.addEventListener('click', () => {
+            ctx.clearRect(0, 0, this.signatureCanvas.width, this.signatureCanvas.height);
+        });
+        
+        document.getElementById('save-signature-modal')?.addEventListener('click', () => {
+            this.saveSignature();
+        });
+        
+        // Close modal on background click
+        this.signatureModal?.addEventListener('click', (e) => {
+            if (e.target === this.signatureModal) {
+                this.closeSignatureModal();
+            }
+        });
+    }
+    
+    openSignatureModal(type) {
+        this.currentSignatureType = type;
+        this.signatureModal.classList.remove('hidden');
+        this.signatureModal.setAttribute('aria-hidden', 'false');
+        
+        // Clear canvas
+        const ctx = this.signatureCanvas.getContext('2d');
+        ctx.clearRect(0, 0, this.signatureCanvas.width, this.signatureCanvas.height);
+        
+        // Load existing signature if any
+        if (this.signatures[type]) {
+            const img = new Image();
+            img.onload = () => {
+                ctx.drawImage(img, 0, 0, this.signatureCanvas.width, this.signatureCanvas.height);
+            };
+            img.src = this.signatures[type];
+        }
+    }
+    
+    closeSignatureModal() {
+        this.signatureModal.classList.add('hidden');
+        this.signatureModal.setAttribute('aria-hidden', 'true');
+        this.currentSignatureType = null;
+    }
+    
+    saveSignature() {
+        if (!this.currentSignatureType) return;
+        
+        // Save signature as dataURL
+        const dataUrl = this.signatureCanvas.toDataURL('image/png');
+        this.signatures[this.currentSignatureType] = dataUrl;
+        
+        // Update container to show preview
+        const container = document.getElementById(`signature-${this.currentSignatureType}-container`);
+        if (container) {
+            container.classList.add('has-signature');
+            container.innerHTML = `
+                <img src="${dataUrl}" class="signature-preview" alt="Firma">
+                <button type="button" class="signature-remove-btn" onclick="app.removeSignature('${this.currentSignatureType}')">✕</button>
+            `;
+        }
+        
+        this.closeSignatureModal();
+        this.showStatus('✓ Firma guardada', 'success');
+    }
+    
+    removeSignature(type) {
+        this.signatures[type] = null;
+        const container = document.getElementById(`signature-${type}-container`);
+        if (container) {
+            container.classList.remove('has-signature');
+            container.innerHTML = `
+                <div class="signature-placeholder">
+                    ✍️ Toque aquí para firmar
+                </div>
+            `;
+        }
     }
 
-    getSignatureData(canvasId) {
-        const pad = this.signaturePads[canvasId];
-        if (!pad) return null;
-        return pad.canvas.toDataURL('image/png');
+    getSignatureData(type) {
+        return this.signatures[type];
     }
 
     async generateReport() {
@@ -450,12 +530,12 @@ class App {
             data.signatures = {
                 ingeniero: {
                     nombre: document.getElementById('nombre-ingeniero')?.value || '',
-                    firma: this.getSignatureData('signature-ingeniero'),
+                    firma: this.getSignatureData('ingeniero'),
                     fecha: new Date().toLocaleDateString('es-ES')
                 },
                 cliente: {
                     nombre: document.getElementById('nombre-cliente-firma')?.value || '',
-                    firma: this.getSignatureData('signature-cliente'),
+                    firma: this.getSignatureData('cliente'),
                     fecha: new Date().toLocaleDateString('es-ES')
                 }
             };
