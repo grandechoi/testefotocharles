@@ -200,6 +200,20 @@ class ReportsManager {
                         `EQUIPO ${equip.number}`
                     );
                 }
+                
+                // **NOVO**: Tabela de Mantenimiento deste equipamento
+                documentChildren.push(
+                    new Paragraph({
+                        children: [],
+                        pageBreakBefore: true
+                    })
+                );
+                await this.addMantenimientoTable(
+                    documentChildren, 
+                    equip.sections, 
+                    generalData,
+                    `EQUIPO ${equip.number}`
+                );
             }
         } else {
             // Modo legado - equipamento único
@@ -227,6 +241,15 @@ class ReportsManager {
                     observations.generalPhotos?.conclusion
                 );
             }
+            
+            // Tabela de Mantenimiento (legado)
+            documentChildren.push(
+                new Paragraph({
+                    children: [],
+                    pageBreakBefore: true
+                })
+            );
+            await this.addMantenimientoTable(documentChildren, sections, generalData);
         }
 
         // Sections with items
@@ -338,19 +361,13 @@ class ReportsManager {
          * dentro do loop de equipments acima, ou no modo legado
          */
 
-        // ===== TABELA DE REPUESTOS NECESARIOS =====
+        // ===== TABELA DE REPUESTOS NECESARIOS (compartilhada) =====
         await this.addRepuestosTable(documentChildren, sections);
 
-        // ===== TABELA DE MANTENIMIENTO NO FINAL (sempre última página) =====
-        // Page break antes da tabela
-        documentChildren.push(
-            new Paragraph({
-                children: [],
-                pageBreakBefore: true
-            })
-        );
-        
-        await this.addMantenimientoTable(documentChildren, sections, generalData);
+        /* ===== TABELA DE MANTENIMIENTO REMOVIDA DAQUI =====
+         * Agora é adicionada individualmente para cada equipamento
+         * dentro do loop de equipments acima, ou no modo legado
+         */
 
         return new Document({
             sections: [{
@@ -582,14 +599,18 @@ class ReportsManager {
      * Adiciona tabela de Mantenimiento (formato EXATO conforme imagem do usuário)
      * Com cores, dados e estrutura específica
      */
-    async addMantenimientoTable(documentChildren, sections, generalData) {
+    async addMantenimientoTable(documentChildren, sections, generalData, equipmentLabel = null) {
         const { Paragraph, TextRun, Table, TableRow, TableCell, WidthType, AlignmentType, ShadingType } = this.docx;
 
         // ===== TABELA DE MANTENIMIENTO =====
+        const title = equipmentLabel 
+            ? `Tabla de Mantenimiento - ${equipmentLabel}` 
+            : "Tabla de Mantenimiento";
+        
         documentChildren.push(
             new Paragraph({
                 children: [new TextRun({
-                    text: "Tabla de Mantenimiento",
+                    text: title,
                     bold: true,
                     size: 26
                 })],
