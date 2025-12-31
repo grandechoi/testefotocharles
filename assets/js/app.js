@@ -141,102 +141,143 @@ class App {
             
             console.log(`📦 Borrador size: ${sizeKB} KB (${sizeMB} MB)`);
             
-            // Warn if data is extremely large (>500MB)
-            if (dataStr.length > 500 * 1024 * 1024) {
-                if (!confirm(`El borrador es muy grande (${sizeMB} MB). Esto puede causar lentitud. ¿Continuar?`)) {
-                    return;
-                }
-            }
-            
-            // Try to save to localStorage
+            // Use IndexedDB for drafts (supports much larger sizes)
             try {
-                localStorage.setItem(`draft_${safeName}`, dataStr);
+                await db.put('drafts', {
+                    name: safeName,
+                    data: data,
+                    timestamp: Date.now(),
+                    size: dataStr.length
+                });
+                
                 const displaySize = sizeMB >= 1 ? `${sizeMB} MB` : `${sizeKB} KB`;
                 this.showStatus(`✅ Borrador "${safeName}" guardado (${displaySize})`, 'success');
-            } catch (storageError) {
-                // Handle localStorage quota exceeded
-                if (storageError.name === 'QuotaExceededError') {
-                    const displaySize = sizeMB >= 1 ? `${sizeMB} MB` : `${sizeKB} KB`;
-                    alert('❌ Espacio insuficiente en el navegador.\n\n' +
-                          'Intente:\n' +
-                          '• Eliminar borradores antiguos\n' +
-                          '• Reducir el número de fotos\n' +
-                          `• Tamaño del borrador: ${displaySize}\n` +
-                          `• Límite típico del navegador: ~5-10 GB`);
-                    this.showStatus('Error: Espacio insuficiente', 'error');
+            } catch (dbError) {
+                console.error('IndexedDB error:', dbError);
+                // Fallback to localStorage for small drafts
+                if (dataStr.length < 4 * 1024 * 1024) { // < 4MB
+                    try {
+                        localStorage.setItem(`draft_${safeName}`, dataStr);
+                        const displaySize = sizeMB >= 1 ? `${sizeMB} MB` : `${sizeKB} KB`;
+                        this.showStatus(`✅ Borrador "${safeName}" guardado (${displaySize})`, 'success');
+                    } catch (storageError) {
+                        throw new Error('Espacio insuficiente en el navegador. Elimine borradores antiguos o reduzca fotos.');
+                    }
                 } else {
-                    throw storageError;
+                    throw new Error('Error al guardar en base de datos. Intente reducir el número de fotos.');
                 }
             }
         } catch (error) {
             console.error('Error saving draft:', error);
-            alert(`Error al guardar borrador:\n${error.message}`);
+            alert(`❌ Error al guardar borrador:\n\n${error.message}`);
             this.showStatus('Error al guardar borrador', 'error');
         }
     }
 
-    showDraftModal() {
-        // Get all drafts from localStorage
-        const drafts = [];
-        for (let i = 0; i < localStorage.length; i++) {
-            const key = localStorage.key(i);
-            if (key.startsWith('draft_')) {
-                const name = key.replace('draft_', '');
-                const data = JSON.parse(localStorage.getItem(key));
-                drafts.push({ name, data, key });
-            }
-        }
-
-        if (drafts.length === 0) {
-            alert('No hay borradores guardados');
-            return;
-        }
-
-        // Create and show modal
-        const modal = document.getElementById('draft-modal');
-        if (!modal) {
-            alert('Modal de borradores no encontrado');
-            return;
-        }
-
-        const draftList = document.getElementById('draft-list');
-        draftList.innerHTML = '';
-
-        drafts.forEach(draft => {
-            const item = document.createElement('div');
-            item.className = 'draft-item';
-            item.innerHTML = `
-                <span>${draft.name}</span>
-                <div>
-                    <button class="btn btn-secondary" onclick="app.loadDraft('${draft.key}')">
-                        Cargar
-                    </button>
-                    <button class="btn btn-danger" onclick="app.deleteDraft('${draft.key}')">
-                        Eliminar
-                    </button>
-                </div>
-            `;
-            draftList.appendChild(item);
-        });
-
-        modal.classList.remove('hidden');
-
-        // Close modal listeners
-        const closeButtons = modal.querySelectorAll('.modal-close');
-        closeButtons.forEach(btn => {
-            btn.onclick = () => modal.classList.add('hidden');
-        });
-    }
-
-    loadDraft(key) {
+    async showDraftModal() {
         try {
-            const dataStr = localStorage.getItem(key);
-            if (!dataStr) {
-                alert('Borrador no encontrado');
+            // Get all drafts from IndexedDB
+            const dbDrafts = await db.getAll('drafts') || [];
+            
+            // Also get old localStorage drafts for migration
+            const localDrafts = [];
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                if (key.startsWith('draft_')) {
+                    const name = key.replace('draft_', '');
+                    try {
+                        const data = JSON.parse(localStorage.getItem(key));
+                        localDrafts.push({ name, data, key, source: 'localStorage' });
+                    } catch (e) {
+                        console.error('Error parsing draft:', key, e);
+                    }
+                }
+            }
+            
+            const allDrafts = [
+                ...dbDrafts.map(d => ({ 
+                    name: d.name, 
+                    data: d.data, 
+                    timestamp: d.timestamp,
+                    size: d.size,
+                    source: 'indexedDB' 
+                })),
+                ...localDrafts
+            ];
+
+            if (allDrafts.length === 0) {
+                alert('No hay borradores guardados');
                 return;
             }
 
-            const data = JSON.parse(dataStr);
+            // Sort by timestamp (newest first)
+            allDrafts.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+
+            // Create and show modal
+            const modal = document.getElementById('draft-modal');
+            if (!modal) {
+                alert('Modal de borradores no encontrado');
+                return;
+            }
+
+            const draftList = document.getElementById('draft-list');
+            draftList.innerHTML = '';
+
+            allDrafts.forEach(draft => {
+                const item = document.createElement('div');
+                item.className = 'draft-item';
+                const sizeMB = draft.size ? (draft.size / 1024 / 1024).toFixed(2) : '?';
+                const sizeInfo = draft.size ? ` (${sizeMB} MB)` : '';
+                const draftId = draft.source === 'localStorage' ? draft.key : draft.name;
+                
+                item.innerHTML = `
+                    <span>${draft.name}${sizeInfo}</span>
+                    <div>
+                        <button class="btn btn-secondary" onclick="app.loadDraft('${draftId}', '${draft.source}')">
+                            Cargar
+                        </button>
+                        <button class="btn btn-danger" onclick="app.deleteDraft('${draftId}', '${draft.source}')">
+                            Eliminar
+                        </button>
+                    </div>
+                `;
+                draftList.appendChild(item);
+            });
+
+            modal.classList.remove('hidden');
+
+            // Close modal listeners
+            const closeButtons = modal.querySelectorAll('.modal-close');
+            closeButtons.forEach(btn => {
+                btn.onclick = () => modal.classList.add('hidden');
+            });
+        } catch (error) {
+            console.error('Error showing drafts:', error);
+            alert('Error al cargar lista de borradores');
+        }
+    }
+
+    async loadDraft(key, source = 'indexedDB') {
+        try {
+            let data;
+            
+            if (source === 'localStorage') {
+                const dataStr = localStorage.getItem(key);
+                if (!dataStr) {
+                    alert('Borrador no encontrado');
+                    return;
+                }
+                data = JSON.parse(dataStr);
+            } else {
+                // Load from IndexedDB
+                const drafts = await db.getAll('drafts');
+                const draft = drafts.find(d => d.name === key);
+                if (!draft) {
+                    alert('Borrador no encontrado');
+                    return;
+                }
+                data = draft.data;
+            }
 
             // Load data into forms
             formsManager.itemStates = data.sections || {};
@@ -260,12 +301,27 @@ class App {
         }
     }
 
-    deleteDraft(key) {
+    async deleteDraft(key, source = 'indexedDB') {
         if (!confirm('¿Eliminar este borrador?')) return;
 
-        localStorage.removeItem(key);
-        this.showDraftModal(); // Refresh list
-        this.showStatus('✅ Borrador eliminado', 'success');
+        try {
+            if (source === 'localStorage') {
+                localStorage.removeItem(key);
+            } else {
+                // Delete from IndexedDB
+                const drafts = await db.getAll('drafts');
+                const draft = drafts.find(d => d.name === key);
+                if (draft) {
+                    await db.delete('drafts', draft.name);
+                }
+            }
+            
+            this.showDraftModal(); // Refresh list
+            this.showStatus('✅ Borrador eliminado', 'success');
+        } catch (error) {
+            console.error('Error deleting draft:', error);
+            alert('Error al eliminar borrador');
+        }
     }
 
     checkStorage() {
