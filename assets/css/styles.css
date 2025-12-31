@@ -626,7 +626,8 @@ textarea {
 .section-photo-preview img {
   width: 100%;
   max-height: 300px;
-  object-fit: cover;
+  object-fit: contain; /* Mantém proporção, não estica */
+  background: #f5f5f5;
 }
 
 .section-photo-preview .btn-remove-photo {
@@ -985,6 +986,7 @@ textarea {
   width: 100%;
   border-radius: 12px;
   background: black;
+  object-fit: contain; /* Mantém proporção 1:1, não estica */
 }
 
 .photo-capture-actions {
@@ -1121,6 +1123,7 @@ textarea {
   max-width: 100%;
   max-height: 300px;
   border-radius: 8px;
+  object-fit: contain; /* Mantém proporção, não estica */
 }
 
 .photo-actions {

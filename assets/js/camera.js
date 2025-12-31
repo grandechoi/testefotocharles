@@ -38,8 +38,9 @@ class CameraManager {
       this.stream = await navigator.mediaDevices.getUserMedia({
         video: { 
           facingMode: "environment", // Câmera traseira
+          aspectRatio: { ideal: 1.0 }, // Aspect ratio 1:1 para zoom 1x sem esticamento
           width: { ideal: 1920 },
-          height: { ideal: 1080 }
+          height: { ideal: 1920 }
         }
       });
 
@@ -197,12 +198,13 @@ class CameraManager {
         const btnCapture = modal.querySelector('.btn-capture');
         const btnCancel = modal.querySelector('.btn-cancel');
 
-        // Start camera
+        // Start camera with 1x zoom and correct aspect ratio
         const stream = await navigator.mediaDevices.getUserMedia({
           video: { 
             facingMode: "environment",
+            aspectRatio: { ideal: 1.0 },
             width: { ideal: 1920 },
-            height: { ideal: 1080 }
+            height: { ideal: 1920 } // Square aspect for 1x zoom
           }
         });
 

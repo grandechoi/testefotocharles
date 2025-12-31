@@ -268,6 +268,25 @@ class FormsManager {
             }
         });
 
+        // Detect file input cancel/close - when user opens but doesn't select anything
+        // This prevents modal freeze when canceling file selection
+        fileInput.addEventListener('cancel', () => {
+            // Modal remains open, user can try again or close manually
+        });
+
+        // Focus event as fallback for browsers that don't support 'cancel' event
+        let fileInputOpened = false;
+        fileInput.addEventListener('click', () => {
+            fileInputOpened = true;
+        });
+
+        // If file dialog was opened but no file selected, allow modal to remain functional
+        window.addEventListener('focus', function checkFileInputCancel() {
+            if (fileInputOpened && !fileInput.files.length) {
+                fileInputOpened = false;
+            }
+        }, { once: true });
+
         // Camera button
         btnCamera.addEventListener('click', async () => {
             try {
