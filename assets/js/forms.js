@@ -774,7 +774,23 @@ class FormsManager {
             });
         });
 
-        console.log('✅ All data cleared (including signatures and hours)');
+        // Limpar acciones correctivas
+        if (window.app && window.app.accionesCorrectivas) {
+            window.app.accionesCorrectivas = [];
+            const container = document.getElementById('acciones-list');
+            if (container) container.innerHTML = '';
+        }
+
+        // Limpar fotos gerais (recomendaciones, conclusion)
+        if (window.app && window.app.generalPhotos) {
+            window.app.generalPhotos = {};
+            ['recomendaciones', 'conclusion'].forEach(campo => {
+                const container = document.getElementById(`${campo}-photos`);
+                if (container) container.innerHTML = '';
+            });
+        }
+
+        console.log('✅ All data cleared (including signatures, hours, acciones, and general photos)');
     }
 
     /**
@@ -888,7 +904,9 @@ class FormsManager {
             observations: this.collectObservations(),
             sections: this.formatSectionsForReport(),
             sectionPhotos: this.sectionPhotos,
-            itemPhotos: this.itemPhotos
+            itemPhotos: this.itemPhotos,
+            hoursData: this.collectHoursData(),
+            signatures: this.collectSignaturesData()
         };
     }
 

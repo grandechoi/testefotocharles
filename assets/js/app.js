@@ -138,9 +138,16 @@ class App {
         try {
             const data = await formsManager.getReportData();
             
+            // Add acciones correctivas and general photos from app
+            data.accionesCorrectivas = this.accionesCorrectivas || [];
+            data.generalPhotos = this.generalPhotos || {};
+            
             // Count photos for debugging
             let photoCount = 0;
             Object.values(data.itemPhotos || {}).forEach(photos => {
+                if (Array.isArray(photos)) photoCount += photos.length;
+            });
+            Object.values(data.generalPhotos || {}).forEach(photos => {
                 if (Array.isArray(photos)) photoCount += photos.length;
             });
             console.log(`📷 Total photos: ${photoCount}`);
@@ -333,6 +340,20 @@ class App {
             formsManager.populateHoursData(data.hoursData);
             formsManager.populateSignaturesData(data.signatures);
             formsManager.updateAllDisplays();
+
+            // Load acciones correctivas
+            if (data.accionesCorrectivas) {
+                this.accionesCorrectivas = data.accionesCorrectivas;
+                this.renderAllAcciones();
+            }
+
+            // Load general photos (recomendaciones, conclusion)
+            if (data.generalPhotos) {
+                this.generalPhotos = data.generalPhotos;
+                ['recomendaciones', 'conclusion'].forEach(campo => {
+                    this.renderGeneralPhotos(campo);
+                });
+            }
 
             // Close modal
             const modal = document.getElementById('draft-modal');
