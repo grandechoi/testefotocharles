@@ -233,6 +233,9 @@ class EquipmentManager {
         if (sectionsContainer) {
             window.formsManager.sectionsContainer = sectionsContainer;
             window.formsManager.renderAllSections();
+            
+            // **NOVO**: Atualizar displays para renderizar fotos
+            window.formsManager.updateAllDisplays();
         }
 
         // Carregar ações corretivas
